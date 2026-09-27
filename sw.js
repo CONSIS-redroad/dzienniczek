@@ -11,7 +11,7 @@
  * Dane dzienniczka żyją wyłącznie w Google (Firestore/Drive) lub RAM sesji.
  */
 
-const CACHE_NAME   = 'dzienniczek-v3-shell-1';
+const CACHE_NAME   = 'dzienniczek-v3-shell-2';
 const FONT_CACHE   = 'dzienniczek-v3-fonts-1';
 
 /* Pliki do cache'owania przy instalacji (app shell) */
