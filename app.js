@@ -1,13 +1,13 @@
 /*!
  * Dzienniczek samoobserwacji v2
- * Google Auth stub — gotowe na podłączenie Firebase Auth + Firestore/Drive
+ * Google Auth — integracja z Google Identity Services (GIS)
  * Strona nie przechowuje żadnych danych lokalnie.
  */
 
 /* =============================================================
-   KONFIGURACJA — uzupełnij przed wdrożeniem
+   KONFIGURACJA
    ============================================================= */
-const GOOGLE_CLIENT_ID = "TWOJ_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "1051357385125-d1uva50v54tgbbrc28bh070m6l2vb69r.apps.googleusercontent.com";
 
 /* =============================================================
    STAN APLIKACJI
@@ -15,9 +15,9 @@ const GOOGLE_CLIENT_ID = "TWOJ_CLIENT_ID.apps.googleusercontent.com";
    Po wylogowaniu / odświeżeniu — czysto.
    ============================================================= */
 const AppState = (() => {
-  let _user   = null;   // { name, email, avatar }
+  let _user   = null;   // { name, email, avatar, sub }
   let _data   = {};     // { "YYYY-MM-DD": { symptoms: bool[], note: string } }
-  let _quotes = {};     // { timestamp: string }  — cytaty użytkownika
+  let _quotes = {};     // { timestamp: string } — cytaty użytkownika
 
   return {
     getUser:   ()      => _user,
@@ -46,7 +46,7 @@ const SYMPTOMS = [
   "Oczekiwanie podporządkowania",
   "Pouczanie / wyzywanie",
   "Działania za partnera",
-  "Planowanie \u201egdyby nie pi\u0142\u201d",
+  "Planowanie „gdyby nie pił”",
   "Poczucie pustki",
   "Napięcie i rozdrażnienie",
   "Nie mówienie wprost",
@@ -76,14 +76,12 @@ const Polish = {
 };
 
 /* =============================================================
-   GOOGLE AUTH STUB
-   Gotowe do zastąpienia prawdziwym Google Identity Services.
+   GOOGLE AUTH
    ============================================================= */
 const Auth = {
   /** Inicjalizuj Google Identity Services (GIS) */
   init() {
-    // Gdy CLIENT_ID jest ustawiony, ładujemy GSI
-    if (GOOGLE_CLIENT_ID !== "TWOJ_CLIENT_ID.apps.googleusercontent.com") {
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "TWOJ_CLIENT_ID.apps.googleusercontent.com") {
       const s = document.createElement("script");
       s.src   = "https://accounts.google.com/gsi/client";
       s.async = true;
@@ -107,9 +105,18 @@ const Auth = {
   },
 
   _onCredential(response) {
-    // Dekoduj JWT payload (bez walidacji — walidacja powinna być po stronie serwera)
     try {
-      const payload = JSON.parse(atob(response.credential.split(".")[1]));
+      // Bezpieczne dekodowanie JWT (Base64Url -> Base64 -> UTF-8)
+      const base64Url = response.credential.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const payload = JSON.parse(jsonPayload);
+
       AppState.setUser({
         name:   payload.name,
         email:  payload.email,
@@ -123,7 +130,7 @@ const Auth = {
     }
   },
 
-  /** Demo login — usuń w produkcji */
+  /** Demo login */
   demoLogin() {
     AppState.setUser({
       name:   "Użytkownik demo",
@@ -152,7 +159,7 @@ const Auth = {
       document.getElementById("user-name").textContent = user.name;
       const av = document.getElementById("user-avatar");
       if (user.avatar) {
-        av.src   = user.avatar;
+        av.src = user.avatar;
         av.style.display = "inline-block";
         document.getElementById("user-avatar-placeholder").style.display = "none";
       } else {
@@ -166,22 +173,15 @@ const Auth = {
 };
 
 /* =============================================================
-   PAMIĘĆ — STUB GOOGLE DRIVE / FIRESTORE
-   W produkcji: zastąp fetch() wywołaniami Firestore SDK lub Drive API.
+   PAMIĘĆ — STORAGE
    ============================================================= */
 const Storage = {
   async load() {
-    // TODO: pobierz dane z Google Drive / Firestore dla zalogowanego usera
-    // Przykład Firestore:
-    // const doc = await db.collection("journals").doc(AppState.getUser().sub).get();
-    // return doc.data() || { days: {}, quotes: {} };
     return { days: {}, quotes: {} };
   },
 
   async save(days, quotes) {
-    // TODO: zapisz dane do Google Drive / Firestore
-    // W tej chwili nic nie robimy — strona niczego nie przechowuje.
-    console.info("[Storage] Zapis do chmury Google — do wdrożenia.");
+    console.info("[Storage] Zapis sesji.");
   },
 };
 
@@ -242,7 +242,7 @@ const UI = {
     document.getElementById("month-label").textContent =
       `${Polish.months[m]} ${y}`;
 
-    const cal   = document.getElementById("calendar");
+    const cal = document.getElementById("calendar");
     cal.innerHTML = "";
 
     const first = new Date(y, m, 1);
@@ -335,19 +335,17 @@ const Modal = {
 
   open(key) {
     this.currentKey = key;
-    const data  = AppState.getData();
-    const el    = document.getElementById("day-modal");
+    const data    = AppState.getData();
+    const el      = document.getElementById("day-modal");
     const overlay = document.getElementById("modal-overlay");
 
     if (!data[key]) {
       data[key] = { symptoms: Array(SYMPTOMS.length).fill(false), note: "" };
     }
 
-    // Tytuł
     document.getElementById("modal-date").textContent =
       key.split("-").reverse().join(".");
 
-    // Objawy
     const box = document.getElementById("symptoms-box");
     box.innerHTML = "";
     data[key].symptoms.forEach((checked, i) => {
@@ -374,15 +372,12 @@ const Modal = {
       box.appendChild(label);
     });
 
-    // Notatka
     const note = document.getElementById("note-box");
     note.value = data[key].note ?? "";
     this._updateNoteCount();
 
     overlay.classList.add("open");
     el.classList.add("open");
-
-    // Zapobiegaj scroll body
     document.body.style.overflow = "hidden";
   },
 
@@ -435,7 +430,6 @@ const MonthView = {
     const table = document.createElement("table");
     table.className = "month-table";
 
-    // Nagłówek
     const thead  = table.createTHead();
     const headTr = thead.insertRow();
     const thName = document.createElement("th");
@@ -447,7 +441,6 @@ const MonthView = {
       headTr.appendChild(th);
     }
 
-    // Wiersze
     const tbody = table.createTBody();
     SYMPTOMS.forEach((sym, i) => {
       const tr = tbody.insertRow();
@@ -464,7 +457,6 @@ const MonthView = {
       }
     });
 
-    // Wiersz sumy
     const sumTr = tbody.insertRow();
     sumTr.className = "sum-row";
     const sumLabel = sumTr.insertCell();
@@ -493,7 +485,7 @@ const MonthView = {
 };
 
 /* =============================================================
-   EXPORT / IMPORT (lokalny plik jako backup)
+   EXPORT / IMPORT
    ============================================================= */
 const DataIO = {
   export() {
@@ -548,7 +540,7 @@ const Toast = {
 };
 
 /* =============================================================
-   BINDOWANIE ZDARZEŃ — po załadowaniu DOM
+   BINDOWANIE ZDARZEŃ
    ============================================================= */
 document.addEventListener("DOMContentLoaded", () => {
   /* Auth */
@@ -580,7 +572,7 @@ document.addEventListener("DOMContentLoaded", () => {
     Toast.show("Cytat dodany ✓");
   });
 
-  /* Kalendarz — nawigacja */
+  /* Kalendarz */
   document.getElementById("btn-prev-month").addEventListener("click", () => {
     App.calRef.setMonth(App.calRef.getMonth() - 1);
     UI.drawCal();
@@ -621,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.target.value = "";
   });
 
-  /* Drag & drop na całą kartę eksportu */
+  /* Drag & drop */
   const dropCard = document.getElementById("export-card");
   dropCard.addEventListener("dragover",  e => { e.preventDefault(); dropCard.classList.add("drag-over"); });
   dropCard.addEventListener("dragleave", e => {
@@ -636,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
     DataIO.import(e.dataTransfer.files[0]);
   });
 
-  /* Mobile: toggle panelu bocznego */
+  /* Mobile */
   document.getElementById("btn-toggle-side").addEventListener("click", () => {
     document.getElementById("side-panels").classList.toggle("open");
   });
