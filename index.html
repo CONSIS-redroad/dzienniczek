@@ -3,7 +3,6 @@
   Dzienniczek samoobserwacji
   Wersja: 3.0.0 (PWA — Android)
   Data: 2026-09-27
-  Instalacja: Chrome → menu ⋮ → "Zainstaluj aplikację"
 -->
 <html lang="pl">
 <head>
@@ -15,23 +14,24 @@
   <meta name="theme-color" content="#6b9080" />
   <meta name="robots" content="noindex, nofollow" />
 
-  <!-- PWA manifest -->
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="manifest" href="manifest.json" />
 
-  <!-- iOS Safari homescreen -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- Mobile web app -->
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Dzienniczek" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
 
-  <!-- Security -->
+  <!-- Security: Poluzowane script-src pod Google Identity & skrypty inline -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self' https://accounts.google.com https://*.googleapis.com;
-             script-src 'self' https://accounts.google.com https://*.googleapis.com;
+             script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.googleapis.com https://*.google.com;
              img-src 'self' data: https://*.googleusercontent.com;
              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
              font-src 'self' https://fonts.gstatic.com;
-             connect-src 'self' https://*.googleapis.com;" />
+             connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com;" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 
   <!-- Fonts -->
@@ -64,9 +64,9 @@
     <button class="btn btn-ghost btn-sm" id="btn-logout" aria-label="Wyloguj się">Wyloguj</button>
   </div>
 
-  <!-- Niezalogowany — link do strony logowania -->
+  <!-- Niezalogowany -->
   <div id="auth-login-view">
-    <button class="btn btn-primary btn-sm" onclick="document.getElementById('landing').scrollIntoView({behavior:'smooth'})">
+    <button class="btn btn-primary btn-sm" id="btn-scroll-login">
       Zaloguj się
     </button>
   </div>
@@ -110,7 +110,7 @@
       Po zamknięciu karty wszystko zniknie.
     </p>
 
-    <!-- Przycisk instalacji PWA — pojawia się automatycznie na Android/Chrome -->
+    <!-- Przycisk instalacji PWA -->
     <div class="divider" aria-hidden="true" id="install-divider" style="display:none;">lub</div>
     <button class="btn btn-primary" id="btn-install"
       style="display:none;width:100%;justify-content:center;"
@@ -139,7 +139,7 @@
     </div>
   </section>
 
-  <!-- Panel dodawania cytatu (ukryty) -->
+  <!-- Panel dodawania cytatu -->
   <div class="add-quote-panel" id="add-quote-panel" hidden role="form" aria-label="Dodaj cytat">
     <textarea
       id="quote-input"
@@ -271,8 +271,7 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn btn-primary" id="btn-close-modal-2"
-        onclick="Modal.close()" style="width:100%;justify-content:center;">
+      <button class="btn btn-primary" id="btn-close-modal-2" style="width:100%;justify-content:center;">
         Gotowe
       </button>
     </div>
@@ -308,19 +307,26 @@
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 
-
 <script src="quotes.js"></script>
 <script src="app.js"></script>
 
-<!-- PWA: rejestracja Service Workera -->
+<!-- PWA: rejestracja Service Workera i obsługa UI -->
 <script>
+  // Podpięcie przycisków bez inline onclick
+  document.getElementById('btn-scroll-login')?.addEventListener('click', () => {
+    document.getElementById('landing')?.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('btn-close-modal-2')?.addEventListener('click', () => {
+    Modal.close();
+  });
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
       try {
         const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
         console.log('[PWA] Service Worker zarejestrowany:', reg.scope);
 
-        /* Powiadom użytkownika gdy dostępna nowa wersja */
         reg.addEventListener('updatefound', () => {
           const newSW = reg.installing;
           newSW.addEventListener('statechange', () => {
@@ -335,7 +341,6 @@
     });
   }
 
-  /* Obsługa shortcutu z manifest.json: ?action=today */
   window.addEventListener('appready', () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('action') === 'today' && AppState.getUser()) {
@@ -344,7 +349,6 @@
     }
   });
 
-  /* Baner "Zainstaluj aplikację" — pokaż własny UI zamiast domyślnego */
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
