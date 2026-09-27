@@ -2,8 +2,8 @@
   "name": "Dzienniczek samoobserwacji",
   "short_name": "Dzienniczek",
   "description": "Bezpieczny dzienniczek samoobserwacji dla osób w terapii. Twoje dane należą tylko do Ciebie.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/dzienniczek/index.html",
+  "scope": "/dzienniczek/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#f5f3ef",
@@ -38,7 +38,7 @@
       "name": "Dzisiejszy wpis",
       "short_name": "Dziś",
       "description": "Otwórz formularz na dzisiejszy dzień",
-      "url": "./index.html?action=today",
+      "url": "/dzienniczek/index.html?action=today",
       "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
     }
   ]
