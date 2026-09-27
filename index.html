@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <!--
   Dzienniczek samoobserwacji
-  Wersja: 3.0.0 (PWA — Android)
-  Data: 2026-09-27
+  Wersja: 3.0.0 (PWA)
 -->
 <html lang="pl">
 <head>
@@ -24,12 +23,12 @@
   <meta name="apple-mobile-web-app-title" content="Dzienniczek" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
 
-  <!-- Security: Poluzowane script-src pod Google Identity & skrypty inline -->
+  <!-- Security: Pełne zezwolenia dla Google Identity Services i stylów -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self' https://accounts.google.com https://*.googleapis.com;
              script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.googleapis.com https://*.google.com;
              img-src 'self' data: https://*.googleusercontent.com;
-             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com;
              font-src 'self' https://fonts.gstatic.com;
              connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com;" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -44,10 +43,9 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════
-     HEADER — sticky, widoczny zawsze
+     HEADER
      ═══════════════════════════════════════════════ -->
 <header class="header">
-
   <div class="header-brand">
     <div class="brand-icon" aria-hidden="true">🌿</div>
     <div class="brand-text">
@@ -56,7 +54,7 @@
     </div>
   </div>
 
-  <!-- Zalogowany -->
+  <!-- Widok zalogowanego -->
   <div id="auth-user-view" style="display:none;" role="region" aria-label="Konto użytkownika">
     <img id="user-avatar" class="user-avatar" src="" alt="Zdjęcie profilowe" style="display:none;" />
     <div id="user-avatar-placeholder" aria-hidden="true" style="display:none;"></div>
@@ -64,40 +62,36 @@
     <button class="btn btn-ghost btn-sm" id="btn-logout" aria-label="Wyloguj się">Wyloguj</button>
   </div>
 
-  <!-- Niezalogowany -->
+  <!-- Widok niezalogowanego -->
   <div id="auth-login-view">
     <button class="btn btn-primary btn-sm" id="btn-scroll-login">
       Zaloguj się
     </button>
   </div>
-
 </header>
 
-
 <!-- ═══════════════════════════════════════════════
-     LANDING — ekran dla niezalogowanych
+     LANDING — ekran powitalny
      ═══════════════════════════════════════════════ -->
 <section id="landing" role="main" aria-label="Strona startowa">
-
   <div class="landing-hero">
     <h1>Twoja bezpieczna przestrzeń</h1>
     <p>
       Codzienny dzienniczek samoobserwacji wspierający pracę terapeutyczną.
-      Śledź objawy, zapisuj myśli i obserwuj swój postęp — w zupełnie prywatny sposób.
+      Śledź objawy, notuj refleksje i obserwuj swój spokój oraz postępy.
     </p>
     <div class="privacy-badges" role="list" aria-label="Gwarancje prywatności">
-      <span class="badge" role="listitem">🔒 Brak danych na serwerze</span>
-      <span class="badge" role="listitem">☁️ Pamięć w Twoim Google</span>
-      <span class="badge" role="listitem">🚫 Bez cookies śledzących</span>
-      <span class="badge" role="listitem">🛡️ Tylko Ty masz dostęp</span>
+      <span class="badge" role="listitem">🔒 Prywatny profil konta</span>
+      <span class="badge" role="listitem">🚫 Brak trackerów reklamowych</span>
+      <span class="badge" role="listitem">🛡️ Dostęp tylko po autoryzacji</span>
     </div>
   </div>
 
   <div class="card login-card" role="complementary" aria-label="Formularz logowania">
     <h2>Zaloguj się</h2>
-    <p>Twoje dane są przechowywane wyłącznie na Twoim koncie Google. Strona nie zapisuje niczego lokalnie.</p>
+    <p>Zaloguj się kontem Google, aby Twoje wpisy były połączone z Twoim bezpiecznym profilem.</p>
 
-    <!-- Google Identity Services wstrzyknie tu przycisk -->
+    <!-- Kontener przycisku Google Identity Services -->
     <div id="gsi-button" aria-label="Przycisk logowania Google"></div>
 
     <div class="divider" aria-hidden="true">lub</div>
@@ -106,8 +100,7 @@
       👤 Wypróbuj bez logowania
     </button>
     <p class="demo-note">
-      Tryb demo — dane istnieją tylko podczas tej sesji przeglądarki.<br>
-      Po zamknięciu karty wszystko zniknie.
+      Tryb gościa — wpisy istnieją tylko do odświeżenia lub zamknięcia karty.
     </p>
 
     <!-- Przycisk instalacji PWA -->
@@ -118,16 +111,14 @@
       📲 Zainstaluj aplikację
     </button>
   </div>
-
 </section>
-
 
 <!-- ═══════════════════════════════════════════════
      GŁÓWNA APLIKACJA
      ═══════════════════════════════════════════════ -->
 <main id="main-app" style="display:none;" aria-label="Dzienniczek">
 
-  <!-- CYTAT DNIA -->
+  <!-- Cytat dnia -->
   <section class="quote-card" aria-label="Inspiracja dnia">
     <div class="quote-content">
       <div id="quote-text" class="quote-text" role="blockquote"></div>
@@ -139,12 +130,12 @@
     </div>
   </section>
 
-  <!-- Panel dodawania cytatu -->
+  <!-- Panel dodawania własnego cytatu -->
   <div class="add-quote-panel" id="add-quote-panel" hidden role="form" aria-label="Dodaj cytat">
     <textarea
       id="quote-input"
       maxlength="200"
-      placeholder="Wpisz inspirujący cytat, który chcesz zachować…"
+      placeholder="Wpisz myśl lub cytat, który chcesz zachować…"
       rows="3"
       aria-label="Treść cytatu"
     ></textarea>
@@ -154,15 +145,12 @@
     </div>
   </div>
 
-  <!-- Mobile: przełącznik panelu bocznego -->
-  <button class="btn btn-ghost" id="btn-toggle-side" aria-expanded="false"
-    aria-controls="side-panels">
-    ☰ Statystyki i eksport
+  <!-- Przełącznik boczny dla ekranów mobilnych -->
+  <button class="btn btn-ghost" id="btn-toggle-side" aria-expanded="false" aria-controls="side-panels">
+    ☰ Statystyki i profil
   </button>
 
-  <!-- GRID: kalendarz + panel boczny -->
   <div class="app-grid">
-
     <!-- KALENDARZ -->
     <div class="card" role="region" aria-label="Kalendarz">
       <div class="cal-header">
@@ -188,15 +176,14 @@
 
       <div class="cal-footer">
         <button class="btn btn-ghost btn-sm" id="btn-month-view">
-          📊 Podgląd miesiąca
+          📊 Zestawienie tabelaryczne
         </button>
       </div>
     </div>
 
     <!-- PANEL BOCZNY -->
     <div id="side-panels">
-
-      <!-- STATYSTYKI -->
+      <!-- Statystyki -->
       <div class="card" role="region" aria-label="Statystyki">
         <h3>Twój postęp</h3>
         <div class="stats-grid">
@@ -215,31 +202,20 @@
         </div>
       </div>
 
-      <!-- EKSPORT / IMPORT -->
-      <div class="card" id="export-card" role="region" aria-label="Eksport i import danych">
-        <h3>Kopia zapasowa</h3>
-
+      <!-- Bezpieczeństwo i stan konta -->
+      <div class="card" role="region" aria-label="Stan konta">
+        <h3>Twoje dane</h3>
         <div class="privacy-note" role="note">
-          <strong>🔒 Twoje dane są bezpieczne.</strong><br>
-          Aplikacja nie zapisuje niczego na serwerze ani w przeglądarce —
-          wszystko trzyma Twoje konto Google.
-          Poniżej możesz pobrać lokalną kopię zapasową lub wgrać wcześniej zapisany plik.
+          <strong>🔒 Profil powiązany z kontem Google.</strong><br>
+          Wpisy są automatycznie zapisywane dla Twojego identyfikatora użytkownika.
         </div>
-
         <div class="export-actions">
-          <button class="btn btn-primary btn-sm" id="btn-export">⬇ Pobierz kopię</button>
-          <button class="btn btn-ghost btn-sm" id="btn-import">⬆ Wgraj plik</button>
+          <button class="btn btn-danger btn-sm" id="btn-clear-data">Wyczyść wpisy</button>
         </div>
-
-        <input type="file" id="file-input" accept="application/json" style="display:none;" aria-hidden="true" />
       </div>
-
-    </div><!-- /side-panels -->
-
-  </div><!-- /app-grid -->
-
+    </div>
+  </div>
 </main>
-
 
 <!-- ═══════════════════════════════════════════════
      MODAL — wpis dnia
@@ -247,7 +223,6 @@
 <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true"
      aria-labelledby="modal-date" aria-hidden="true">
   <div id="day-modal" class="day-modal" role="document">
-
     <div class="modal-header">
       <h2 class="modal-title" id="modal-date"></h2>
       <button class="btn-icon" id="btn-close-modal" aria-label="Zamknij">✕</button>
@@ -275,44 +250,32 @@
         Gotowe
       </button>
     </div>
-
   </div>
 </div>
 
-
 <!-- ═══════════════════════════════════════════════
-     MODAL — podgląd miesiąca
+     MODAL — podgląd tabelaryczny
      ═══════════════════════════════════════════════ -->
-<div id="month-overlay" role="dialog" aria-modal="true"
-     aria-labelledby="month-modal-title">
+<div id="month-overlay" role="dialog" aria-modal="true" aria-labelledby="month-modal-title" aria-hidden="true">
   <div class="month-modal">
-
     <div class="month-modal-header">
       <h2 id="month-modal-title"></h2>
       <div class="month-modal-header-actions">
         <button class="btn btn-ghost btn-sm" id="btn-print-month">🖨️ Drukuj</button>
-        <button class="btn-icon"             id="btn-close-month" aria-label="Zamknij">✕</button>
+        <button class="btn-icon" id="btn-close-month" aria-label="Zamknij">✕</button>
       </div>
     </div>
-
     <div id="month-table-wrap"></div>
-
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════════════
-     TOAST
-     ═══════════════════════════════════════════════ -->
+<!-- Toast -->
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-
 
 <script src="quotes.js"></script>
 <script src="app.js"></script>
 
-<!-- PWA: rejestracja Service Workera i obsługa UI -->
 <script>
-  // Podpięcie przycisków bez inline onclick
   document.getElementById('btn-scroll-login')?.addEventListener('click', () => {
     document.getElementById('landing')?.scrollIntoView({ behavior: 'smooth' });
   });
@@ -325,29 +288,19 @@
     window.addEventListener('load', async () => {
       try {
         const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-        console.log('[PWA] Service Worker zarejestrowany:', reg.scope);
-
         reg.addEventListener('updatefound', () => {
           const newSW = reg.installing;
-          newSW.addEventListener('statechange', () => {
+          newSW?.addEventListener('statechange', () => {
             if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
               Toast.show('Nowa wersja aplikacji gotowa — odśwież stronę 🔄', 'ok');
             }
           });
         });
       } catch (err) {
-        console.warn('[PWA] Rejestracja SW nieudana:', err);
+        console.warn('[PWA] Błąd rejestracji SW:', err);
       }
     });
   }
-
-  window.addEventListener('appready', () => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('action') === 'today' && AppState.getUser()) {
-      const key = new Date().toISOString().slice(0, 10);
-      Modal.open(key);
-    }
-  });
 
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
@@ -359,16 +312,13 @@
       btn.addEventListener('click', async () => {
         btn.style.display = 'none';
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('[PWA] Instalacja:', outcome);
         deferredPrompt = null;
       });
     }
   });
 
   window.addEventListener('appinstalled', () => {
-    Toast.show('Aplikacja zainstalowana! 🌿 Znajdziesz ją na ekranie głównym.', 'ok');
-    deferredPrompt = null;
+    Toast.show('Aplikacja zainstalowana! 🌿', 'ok');
     const btn = document.getElementById('btn-install');
     if (btn) btn.style.display = 'none';
   });

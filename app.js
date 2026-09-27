@@ -1,7 +1,7 @@
 /*!
- * Dzienniczek samoobserwacji v2
- * Google Auth — integracja z Google Identity Services (GIS)
- * Strona nie przechowuje żadnych danych lokalnie.
+ * Dzienniczek samoobserwacji v3
+ * Integracja z Google Identity Services (GIS)
+ * Trwały zapis powiązany z ID konta użytkownika.
  */
 
 /* =============================================================
@@ -11,13 +11,11 @@ const GOOGLE_CLIENT_ID = "1051357385125-d1uva50v54tgbbrc28bh070m6l2vb69r.apps.go
 
 /* =============================================================
    STAN APLIKACJI
-   Dane żyją tylko w pamięci RAM sesji przeglądarki.
-   Po wylogowaniu / odświeżeniu — czysto.
    ============================================================= */
 const AppState = (() => {
   let _user   = null;   // { name, email, avatar, sub }
   let _data   = {};     // { "YYYY-MM-DD": { symptoms: bool[], note: string } }
-  let _quotes = {};     // { timestamp: string } — cytaty użytkownika
+  let _quotes = {};     // { timestamp: string }
 
   return {
     getUser:   ()      => _user,
@@ -66,8 +64,8 @@ const SYMPTOMS = [
 /* =============================================================
    NARZĘDZIA
    ============================================================= */
-const fmt      = d  => d.toISOString().slice(0, 10);
-const today    = () => fmt(new Date());
+const fmt   = d => d.toISOString().slice(0, 10);
+const today = () => fmt(new Date());
 const Polish = {
   months: ["styczeń","luty","marzec","kwiecień","maj","czerwiec",
            "lipiec","sierpień","wrzesień","październik","listopad","grudzień"],
@@ -76,10 +74,45 @@ const Polish = {
 };
 
 /* =============================================================
+   PAMIĘĆ — ZAPIS PER KONTO UŻYTKOWNIKA
+   ============================================================= */
+const Storage = {
+  _getKey() {
+    const user = AppState.getUser();
+    return user ? `dzienniczek_user_${user.sub}` : null;
+  },
+
+  async load() {
+    const userKey = this._getKey();
+    if (!userKey) return { days: {}, quotes: {} };
+    try {
+      const raw = localStorage.getItem(userKey);
+      return raw ? JSON.parse(raw) : { days: {}, quotes: {} };
+    } catch {
+      return { days: {}, quotes: {} };
+    }
+  },
+
+  async save(days, quotes) {
+    const userKey = this._getKey();
+    if (!userKey) return;
+    try {
+      localStorage.setItem(userKey, JSON.stringify({ days, quotes }));
+    } catch (e) {
+      console.warn("Błąd zapisu w pamięci przeglądarki:", e);
+    }
+  },
+
+  async clearUser() {
+    const userKey = this._getKey();
+    if (userKey) localStorage.removeItem(userKey);
+  }
+};
+
+/* =============================================================
    GOOGLE AUTH
    ============================================================= */
 const Auth = {
-  /** Inicjalizuj Google Identity Services (GIS) */
   init() {
     if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "TWOJ_CLIENT_ID.apps.googleusercontent.com") {
       const s = document.createElement("script");
@@ -96,24 +129,20 @@ const Auth = {
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback:  (r) => this._onCredential(r),
+      use_fedcm_for_prompt: false,
     });
     window.google.accounts.id.renderButton(
       document.getElementById("gsi-button"),
       { type: "standard", shape: "pill", theme: "outline", text: "signin_with", locale: "pl" }
     );
-    window.google.accounts.id.prompt();
   },
 
   _onCredential(response) {
     try {
-      // Bezpieczne dekodowanie JWT (Base64Url -> Base64 -> UTF-8)
       const base64Url = response.credential.split(".")[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
+        atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
       );
       const payload = JSON.parse(jsonPayload);
 
@@ -126,17 +155,16 @@ const Auth = {
       this._renderUI();
       App.onLogin();
     } catch (e) {
-      console.error("Błąd dekodowania tokenu:", e);
+      console.error("Błąd parsowania profilu Google:", e);
     }
   },
 
-  /** Demo login */
   demoLogin() {
     AppState.setUser({
-      name:   "Użytkownik demo",
-      email:  "demo@example.com",
+      name:   "Użytkownik gość",
+      email:  "gosc@dzienniczek.app",
       avatar: null,
-      sub:    "demo",
+      sub:    "guest_session",
     });
     this._renderUI();
     App.onLogin();
@@ -169,19 +197,6 @@ const Auth = {
         ph.style.display = "flex";
       }
     }
-  },
-};
-
-/* =============================================================
-   PAMIĘĆ — STORAGE
-   ============================================================= */
-const Storage = {
-  async load() {
-    return { days: {}, quotes: {} };
-  },
-
-  async save(days, quotes) {
-    console.info("[Storage] Zapis sesji.");
   },
 };
 
@@ -225,14 +240,12 @@ const UI = {
     document.getElementById("calendar").innerHTML = "";
   },
 
-  /* ---- Nagłówek ---- */
   drawHeader() {
     const d = new Date();
     document.getElementById("today-label").textContent =
       `${d.getDate()} ${Polish.monthsGen[d.getMonth()]} ${d.getFullYear()} r.`;
   },
 
-  /* ---- Kalendarz ---- */
   drawCal() {
     const data = AppState.getData();
     const ref  = App.calRef;
@@ -277,7 +290,6 @@ const UI = {
     }
   },
 
-  /* ---- Statystyki ---- */
   updateStats() {
     const data = AppState.getData();
     const keys = Object.keys(data);
@@ -291,10 +303,8 @@ const UI = {
     }
 
     const total = keys.reduce((s, k) => s + data[k].symptoms.filter(Boolean).length, 0);
-    document.getElementById("stat-avg").textContent =
-      (total / keys.length).toFixed(1);
-    document.getElementById("stat-last").textContent =
-      keys.sort().at(-1).split("-").reverse().join(".");
+    document.getElementById("stat-avg").textContent = (total / keys.length).toFixed(1);
+    document.getElementById("stat-last").textContent = keys.sort().at(-1).split("-").reverse().join(".");
   },
 };
 
@@ -309,12 +319,11 @@ const Quotes = {
   },
 
   random() {
-    const userQ  = Object.values(AppState.getQuotes());
-    const pool   = [...defaultQuotes.map(q => q), ...userQ.map(t => ({ text: t, author: null }))];
+    const userQ = Object.values(AppState.getQuotes());
+    const pool  = [...defaultQuotes.map(q => q), ...userQ.map(t => ({ text: t, author: null }))];
     this.current = pool[Math.floor(Math.random() * pool.length)];
     document.getElementById("quote-text").textContent   = `„${this.current.text}"`;
-    document.getElementById("quote-author").textContent = this.current.author
-      ? `— ${this.current.author}` : "";
+    document.getElementById("quote-author").textContent = this.current.author ? `— ${this.current.author}` : "";
   },
 
   async save(text) {
@@ -343,8 +352,7 @@ const Modal = {
       data[key] = { symptoms: Array(SYMPTOMS.length).fill(false), note: "" };
     }
 
-    document.getElementById("modal-date").textContent =
-      key.split("-").reverse().join(".");
+    document.getElementById("modal-date").textContent = key.split("-").reverse().join(".");
 
     const box = document.getElementById("symptoms-box");
     box.innerHTML = "";
@@ -376,13 +384,16 @@ const Modal = {
     note.value = data[key].note ?? "";
     this._updateNoteCount();
 
+    overlay.setAttribute("aria-hidden", "false");
     overlay.classList.add("open");
     el.classList.add("open");
     document.body.style.overflow = "hidden";
   },
 
   close() {
-    document.getElementById("modal-overlay").classList.remove("open");
+    const overlay = document.getElementById("modal-overlay");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove("open");
     document.getElementById("day-modal").classList.remove("open");
     document.body.style.overflow = "";
     this.currentKey = null;
@@ -401,20 +412,18 @@ const Modal = {
 
   _updateNoteCount() {
     const note = document.getElementById("note-box");
-    document.getElementById("note-count").textContent =
-      `${note.value.length} / 500`;
+    document.getElementById("note-count").textContent = `${note.value.length} / 500`;
   },
 
   _cleanIfEmpty(key) {
     const data = AppState.getData();
     if (!data[key]) return;
-    if (!data[key].symptoms.some(Boolean) && !data[key].note?.trim())
-      delete data[key];
+    if (!data[key].symptoms.some(Boolean) && !data[key].note?.trim()) delete data[key];
   },
 };
 
 /* =============================================================
-   MODAL PODGLĄDU MIESIĄCA
+   MODAL ZESTAWIENIA
    ============================================================= */
 const MonthView = {
   open() {
@@ -424,8 +433,7 @@ const MonthView = {
     const m    = ref.getMonth();
     const days = new Date(y, m + 1, 0).getDate();
 
-    document.getElementById("month-modal-title").textContent =
-      `${Polish.months[m]} ${y}`;
+    document.getElementById("month-modal-title").textContent = `${Polish.months[m]} ${y}`;
 
     const table = document.createElement("table");
     table.className = "month-table";
@@ -451,8 +459,8 @@ const MonthView = {
         const td  = tr.insertCell();
         const key = fmt(new Date(y, m, d));
         if (data[key]?.symptoms[i]) {
-          td.innerHTML  = '<span class="check-mark">✓</span>';
-          td.className  = "has-sym";
+          td.innerHTML = '<span class="check-mark">✓</span>';
+          td.className = "has-sym";
         }
       }
     });
@@ -470,12 +478,17 @@ const MonthView = {
 
     document.getElementById("month-table-wrap").innerHTML = "";
     document.getElementById("month-table-wrap").appendChild(table);
-    document.getElementById("month-overlay").classList.add("open");
+
+    const overlay = document.getElementById("month-overlay");
+    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.add("open");
     document.body.style.overflow = "hidden";
   },
 
   close() {
-    document.getElementById("month-overlay").classList.remove("open");
+    const overlay = document.getElementById("month-overlay");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove("open");
     document.body.style.overflow = "";
   },
 
@@ -485,55 +498,13 @@ const MonthView = {
 };
 
 /* =============================================================
-   EXPORT / IMPORT
-   ============================================================= */
-const DataIO = {
-  export() {
-    const payload = {
-      exported_at: new Date().toISOString(),
-      days:        AppState.getData(),
-      quotes:      AppState.getQuotes(),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement("a"), {
-      href:     url,
-      download: `dzienniczek-${today()}.json`,
-    });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
-
-  import(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async e => {
-      try {
-        const obj = JSON.parse(e.target.result);
-        AppState.setData(obj.days   ?? {});
-        AppState.setQuotes(obj.quotes ?? {});
-        await Storage.save(AppState.getData(), AppState.getQuotes());
-        UI.drawCal();
-        UI.updateStats();
-        Toast.show("Dane zaimportowane ✓");
-      } catch {
-        Toast.show("Błąd pliku JSON", "error");
-      }
-    };
-    reader.readAsText(file);
-  },
-};
-
-/* =============================================================
    TOAST
    ============================================================= */
 const Toast = {
   show(msg, type = "ok") {
     const t = document.getElementById("toast");
-    t.textContent  = msg;
-    t.className    = `toast toast--${type} toast--visible`;
+    t.textContent = msg;
+    t.className   = `toast toast--${type} toast--visible`;
     clearTimeout(this._tid);
     this._tid = setTimeout(() => t.className = "toast", 2800);
   },
@@ -545,57 +516,69 @@ const Toast = {
 document.addEventListener("DOMContentLoaded", () => {
   /* Auth */
   Auth.init();
-  document.getElementById("btn-demo-login").addEventListener("click", () => Auth.demoLogin());
-  document.getElementById("btn-logout").addEventListener("click",    () => Auth.logout());
+  document.getElementById("btn-demo-login")?.addEventListener("click", () => Auth.demoLogin());
+  document.getElementById("btn-logout")?.addEventListener("click", () => Auth.logout());
+
+  /* Wyczyść dane */
+  document.getElementById("btn-clear-data")?.addEventListener("click", async () => {
+    if (confirm("Czy na pewno chcesz usunąć wszystkie zapisane wpisy dla tego konta?")) {
+      await Storage.clearUser();
+      AppState.setData({});
+      UI.drawCal();
+      UI.updateStats();
+      Toast.show("Wpisy zostały usunięte");
+    }
+  });
 
   /* Cytaty */
-  document.getElementById("btn-refresh-quote").addEventListener("click", () => Quotes.random());
+  document.getElementById("btn-refresh-quote")?.addEventListener("click", () => Quotes.random());
 
-  const quotePanel   = document.getElementById("add-quote-panel");
-  const quoteToggle  = document.getElementById("btn-add-quote-toggle");
-  const quoteInput   = document.getElementById("quote-input");
-  const quoteCount   = document.getElementById("quote-char-count");
-  const quoteSave    = document.getElementById("btn-save-quote");
+  const quotePanel  = document.getElementById("add-quote-panel");
+  const quoteToggle = document.getElementById("btn-add-quote-toggle");
+  const quoteInput  = document.getElementById("quote-input");
+  const quoteCount  = document.getElementById("quote-char-count");
+  const quoteSave   = document.getElementById("btn-save-quote");
 
-  quoteToggle.addEventListener("click", () => {
+  quoteToggle?.addEventListener("click", () => {
     quotePanel.hidden = !quotePanel.hidden;
     if (!quotePanel.hidden) quoteInput.focus();
   });
-  quoteInput.addEventListener("input", () => {
+  quoteInput?.addEventListener("input", () => {
     quoteCount.textContent = `${quoteInput.value.length} / 200`;
   });
-  quoteSave.addEventListener("click", async () => {
+  quoteSave?.addEventListener("click", async () => {
     await Quotes.save(quoteInput.value);
-    quoteInput.value  = "";
+    quoteInput.value = "";
     quoteCount.textContent = "0 / 200";
     quotePanel.hidden = true;
     Toast.show("Cytat dodany ✓");
   });
 
   /* Kalendarz */
-  document.getElementById("btn-prev-month").addEventListener("click", () => {
+  document.getElementById("btn-prev-month")?.addEventListener("click", () => {
     App.calRef.setMonth(App.calRef.getMonth() - 1);
     UI.drawCal();
   });
-  document.getElementById("btn-next-month").addEventListener("click", () => {
+  document.getElementById("btn-next-month")?.addEventListener("click", () => {
     App.calRef.setMonth(App.calRef.getMonth() + 1);
     UI.drawCal();
   });
 
-  /* Podgląd miesiąca */
-  document.getElementById("btn-month-view").addEventListener("click",       () => MonthView.open());
-  document.getElementById("btn-close-month").addEventListener("click",      () => MonthView.close());
-  document.getElementById("btn-print-month").addEventListener("click",      () => MonthView.print());
-  document.getElementById("month-overlay").addEventListener("click", e => {
+  /* Zestawienie */
+  document.getElementById("btn-month-view")?.addEventListener("click",  () => MonthView.open());
+  document.getElementById("btn-close-month")?.addEventListener("click", () => MonthView.close());
+  document.getElementById("btn-print-month")?.addEventListener("click", () => MonthView.print());
+  document.getElementById("month-overlay")?.addEventListener("click", e => {
     if (e.target === e.currentTarget) MonthView.close();
   });
 
   /* Modal dnia */
-  document.getElementById("modal-overlay").addEventListener("click", e => {
+  document.getElementById("modal-overlay")?.addEventListener("click", e => {
     if (e.target === e.currentTarget) Modal.close();
   });
-  document.getElementById("btn-close-modal").addEventListener("click",  () => Modal.close());
-  document.getElementById("note-box").addEventListener("input",  e => Modal.noteChanged(e.target.value));
+  document.getElementById("btn-close-modal")?.addEventListener("click", () => Modal.close());
+  document.getElementById("note-box")?.addEventListener("input", e => Modal.noteChanged(e.target.value));
+
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       Modal.close();
@@ -603,33 +586,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  /* Export / Import */
-  document.getElementById("btn-export").addEventListener("click", () => DataIO.export());
-  document.getElementById("btn-import").addEventListener("click", () => {
-    document.getElementById("file-input").click();
-  });
-  document.getElementById("file-input").addEventListener("change", e => {
-    DataIO.import(e.target.files[0]);
-    e.target.value = "";
-  });
-
-  /* Drag & drop */
-  const dropCard = document.getElementById("export-card");
-  dropCard.addEventListener("dragover",  e => { e.preventDefault(); dropCard.classList.add("drag-over"); });
-  dropCard.addEventListener("dragleave", e => {
-    const r = dropCard.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right ||
-        e.clientY < r.top  || e.clientY > r.bottom)
-      dropCard.classList.remove("drag-over");
-  });
-  dropCard.addEventListener("drop", e => {
-    e.preventDefault();
-    dropCard.classList.remove("drag-over");
-    DataIO.import(e.dataTransfer.files[0]);
-  });
-
   /* Mobile */
-  document.getElementById("btn-toggle-side").addEventListener("click", () => {
+  document.getElementById("btn-toggle-side")?.addEventListener("click", () => {
     document.getElementById("side-panels").classList.toggle("open");
   });
 });
