@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<!--
+  Dzienniczek samoobserwacji
+  Wersja: 3.0.0 (PWA — Android)
+  Data: 2026-09-27
+  Instalacja: Chrome → menu ⋮ → "Zainstaluj aplikację"
+-->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>Dzienniczek samoobserwacji</title>
+  <meta name="description" content="Bezpieczny dzienniczek samoobserwacji dla osób w terapii." />
+  <meta name="theme-color" content="#6b9080" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- iOS Safari homescreen -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dzienniczek" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+
+  <!-- Security -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' https://accounts.google.com https://*.googleapis.com;
+             script-src 'self' https://accounts.google.com https://*.googleapis.com;
+             img-src 'self' data: https://*.googleusercontent.com;
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+             font-src 'self' https://fonts.gstatic.com;
+             connect-src 'self' https://*.googleapis.com;" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     HEADER — sticky, widoczny zawsze
+     ═══════════════════════════════════════════════ -->
+<header class="header">
+
+  <div class="header-brand">
+    <div class="brand-icon" aria-hidden="true">🌿</div>
+    <div class="brand-text">
+      <div class="brand-name">Dzienniczek samoobserwacji</div>
+      <div class="brand-date" id="today-label"></div>
+    </div>
+  </div>
+
+  <!-- Zalogowany -->
+  <div id="auth-user-view" style="display:none;" role="region" aria-label="Konto użytkownika">
+    <img id="user-avatar" class="user-avatar" src="" alt="Zdjęcie profilowe" style="display:none;" />
+    <div id="user-avatar-placeholder" aria-hidden="true" style="display:none;"></div>
+    <span class="user-name" id="user-name"></span>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" aria-label="Wyloguj się">Wyloguj</button>
+  </div>
+
+  <!-- Niezalogowany — link do strony logowania -->
+  <div id="auth-login-view">
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('landing').scrollIntoView({behavior:'smooth'})">
+      Zaloguj się
+    </button>
+  </div>
+
+</header>
+
+
+<!-- ═══════════════════════════════════════════════
+     LANDING — ekran dla niezalogowanych
+     ═══════════════════════════════════════════════ -->
+<section id="landing" role="main" aria-label="Strona startowa">
+
+  <div class="landing-hero">
+    <h1>Twoja bezpieczna przestrzeń</h1>
+    <p>
+      Codzienny dzienniczek samoobserwacji wspierający pracę terapeutyczną.
+      Śledź objawy, zapisuj myśli i obserwuj swój postęp — w zupełnie prywatny sposób.
+    </p>
+    <div class="privacy-badges" role="list" aria-label="Gwarancje prywatności">
+      <span class="badge" role="listitem">🔒 Brak danych na serwerze</span>
+      <span class="badge" role="listitem">☁️ Pamięć w Twoim Google</span>
+      <span class="badge" role="listitem">🚫 Bez cookies śledzących</span>
+      <span class="badge" role="listitem">🛡️ Tylko Ty masz dostęp</span>
+    </div>
+  </div>
+
+  <div class="card login-card" role="complementary" aria-label="Formularz logowania">
+    <h2>Zaloguj się</h2>
+    <p>Twoje dane są przechowywane wyłącznie na Twoim koncie Google. Strona nie zapisuje niczego lokalnie.</p>
+
+    <!-- Google Identity Services wstrzyknie tu przycisk -->
+    <div id="gsi-button" aria-label="Przycisk logowania Google"></div>
+
+    <div class="divider" aria-hidden="true">lub</div>
+
+    <button class="btn btn-ghost" id="btn-demo-login" style="width:100%;justify-content:center;">
+      👤 Wypróbuj bez logowania
+    </button>
+    <p class="demo-note">
+      Tryb demo — dane istnieją tylko podczas tej sesji przeglądarki.<br>
+      Po zamknięciu karty wszystko zniknie.
+    </p>
+
+    <!-- Przycisk instalacji PWA — pojawia się automatycznie na Android/Chrome -->
+    <div class="divider" aria-hidden="true" id="install-divider" style="display:none;">lub</div>
+    <button class="btn btn-primary" id="btn-install"
+      style="display:none;width:100%;justify-content:center;"
+      aria-label="Zainstaluj aplikację na urządzeniu">
+      📲 Zainstaluj aplikację
+    </button>
+  </div>
+
+</section>
+
+
+<!-- ═══════════════════════════════════════════════
+     GŁÓWNA APLIKACJA
+     ═══════════════════════════════════════════════ -->
+<main id="main-app" style="display:none;" aria-label="Dzienniczek">
+
+  <!-- CYTAT DNIA -->
+  <section class="quote-card" aria-label="Inspiracja dnia">
+    <div class="quote-content">
+      <div id="quote-text" class="quote-text" role="blockquote"></div>
+      <div id="quote-author" class="quote-author"></div>
+    </div>
+    <div class="quote-actions">
+      <button class="btn-quote" id="btn-refresh-quote" aria-label="Następny cytat">↻ Odśwież</button>
+      <button class="btn-quote" id="btn-add-quote-toggle" aria-label="Dodaj swój cytat">+ Dodaj</button>
+    </div>
+  </section>
+
+  <!-- Panel dodawania cytatu (ukryty) -->
+  <div class="add-quote-panel" id="add-quote-panel" hidden role="form" aria-label="Dodaj cytat">
+    <textarea
+      id="quote-input"
+      maxlength="200"
+      placeholder="Wpisz inspirujący cytat, który chcesz zachować…"
+      rows="3"
+      aria-label="Treść cytatu"
+    ></textarea>
+    <div class="quote-meta-row">
+      <span class="char-count" id="quote-char-count" aria-live="polite">0 / 200</span>
+      <button class="btn btn-primary btn-sm" id="btn-save-quote">Zapisz</button>
+    </div>
+  </div>
+
+  <!-- Mobile: przełącznik panelu bocznego -->
+  <button class="btn btn-ghost" id="btn-toggle-side" aria-expanded="false"
+    aria-controls="side-panels">
+    ☰ Statystyki i eksport
+  </button>
+
+  <!-- GRID: kalendarz + panel boczny -->
+  <div class="app-grid">
+
+    <!-- KALENDARZ -->
+    <div class="card" role="region" aria-label="Kalendarz">
+      <div class="cal-header">
+        <button class="btn-icon" id="btn-prev-month" aria-label="Poprzedni miesiąc">‹</button>
+        <span class="cal-month-label" id="month-label" aria-live="polite"></span>
+        <button class="btn-icon" id="btn-next-month" aria-label="Następny miesiąc">›</button>
+      </div>
+
+      <table role="grid" aria-label="Kalendarz miesięczny">
+        <thead>
+          <tr>
+            <th scope="col" abbr="Poniedziałek">Pn</th>
+            <th scope="col" abbr="Wtorek">Wt</th>
+            <th scope="col" abbr="Środa">Śr</th>
+            <th scope="col" abbr="Czwartek">Cz</th>
+            <th scope="col" abbr="Piątek">Pt</th>
+            <th scope="col" abbr="Sobota">Sb</th>
+            <th scope="col" abbr="Niedziela">Nd</th>
+          </tr>
+        </thead>
+        <tbody id="calendar" role="rowgroup"></tbody>
+      </table>
+
+      <div class="cal-footer">
+        <button class="btn btn-ghost btn-sm" id="btn-month-view">
+          📊 Podgląd miesiąca
+        </button>
+      </div>
+    </div>
+
+    <!-- PANEL BOCZNY -->
+    <div id="side-panels">
+
+      <!-- STATYSTYKI -->
+      <div class="card" role="region" aria-label="Statystyki">
+        <h3>Twój postęp</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">Dni z wpisami</div>
+            <div class="stat-value" id="stat-days" aria-live="polite">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Średnia objawów</div>
+            <div class="stat-value" id="stat-avg" aria-live="polite">–</div>
+          </div>
+          <div class="stat-item stat-last">
+            <div class="stat-label">Ostatni wpis</div>
+            <div class="stat-value" id="stat-last" aria-live="polite">–</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EKSPORT / IMPORT -->
+      <div class="card" id="export-card" role="region" aria-label="Eksport i import danych">
+        <h3>Kopia zapasowa</h3>
+
+        <div class="privacy-note" role="note">
+          <strong>🔒 Twoje dane są bezpieczne.</strong><br>
+          Aplikacja nie zapisuje niczego na serwerze ani w przeglądarce —
+          wszystko trzyma Twoje konto Google.
+          Poniżej możesz pobrać lokalną kopię zapasową lub wgrać wcześniej zapisany plik.
+        </div>
+
+        <div class="export-actions">
+          <button class="btn btn-primary btn-sm" id="btn-export">⬇ Pobierz kopię</button>
+          <button class="btn btn-ghost btn-sm" id="btn-import">⬆ Wgraj plik</button>
+        </div>
+
+        <input type="file" id="file-input" accept="application/json" style="display:none;" aria-hidden="true" />
+      </div>
+
+    </div><!-- /side-panels -->
+
+  </div><!-- /app-grid -->
+
+</main>
+
+
+<!-- ═══════════════════════════════════════════════
+     MODAL — wpis dnia
+     ═══════════════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="modal-date" aria-hidden="true">
+  <div id="day-modal" class="day-modal" role="document">
+
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-date"></h2>
+      <button class="btn-icon" id="btn-close-modal" aria-label="Zamknij">✕</button>
+    </div>
+
+    <div class="modal-body" id="modal-body">
+      <p class="modal-section-label">Objawy</p>
+      <div id="symptoms-box" role="group" aria-label="Lista objawów"></div>
+
+      <p class="modal-section-label" style="margin-top:18px;">Notatka</p>
+      <div class="note-wrap">
+        <textarea
+          id="note-box"
+          maxlength="500"
+          rows="4"
+          placeholder="Co dziś zauważasz? Jak się czujesz? (opcjonalnie)"
+          aria-label="Notatka"
+        ></textarea>
+        <div id="note-count" aria-live="polite">0 / 500</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="btn-close-modal-2"
+        onclick="Modal.close()" style="width:100%;justify-content:center;">
+        Gotowe
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     MODAL — podgląd miesiąca
+     ═══════════════════════════════════════════════ -->
+<div id="month-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="month-modal-title">
+  <div class="month-modal">
+
+    <div class="month-modal-header">
+      <h2 id="month-modal-title"></h2>
+      <div class="month-modal-header-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-print-month">🖨️ Drukuj</button>
+        <button class="btn-icon"             id="btn-close-month" aria-label="Zamknij">✕</button>
+      </div>
+    </div>
+
+    <div id="month-table-wrap"></div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════════════ -->
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+
+
+<script src="quotes.js"></script>
+<script src="app.js"></script>
+
+<!-- PWA: rejestracja Service Workera -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        console.log('[PWA] Service Worker zarejestrowany:', reg.scope);
+
+        /* Powiadom użytkownika gdy dostępna nowa wersja */
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              Toast.show('Nowa wersja aplikacji gotowa — odśwież stronę 🔄', 'ok');
+            }
+          });
+        });
+      } catch (err) {
+        console.warn('[PWA] Rejestracja SW nieudana:', err);
+      }
+    });
+  }
+
+  /* Obsługa shortcutu z manifest.json: ?action=today */
+  window.addEventListener('appready', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'today' && AppState.getUser()) {
+      const key = new Date().toISOString().slice(0, 10);
+      Modal.open(key);
+    }
+  });
+
+  /* Baner "Zainstaluj aplikację" — pokaż własny UI zamiast domyślnego */
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.getElementById('btn-install');
+    if (btn) {
+      btn.style.display = 'flex';
+      btn.addEventListener('click', async () => {
+        btn.style.display = 'none';
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Instalacja:', outcome);
+        deferredPrompt = null;
+      });
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    Toast.show('Aplikacja zainstalowana! 🌿 Znajdziesz ją na ekranie głównym.', 'ok');
+    deferredPrompt = null;
+    const btn = document.getElementById('btn-install');
+    if (btn) btn.style.display = 'none';
+  });
+</script>
+</body>
+</html>

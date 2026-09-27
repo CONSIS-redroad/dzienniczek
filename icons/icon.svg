@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Tło -->
+  <rect width="512" height="512" rx="112" fill="#6b9080"/>
+  <!-- Łodyga -->
+  <path d="M256 420 Q256 320 256 260" stroke="white" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <!-- Lewy liść -->
+  <path d="M256 310 Q200 270 170 220 Q220 230 256 310Z" fill="white"/>
+  <!-- Prawy liść -->
+  <path d="M256 310 Q315 270 345 220 Q295 230 256 310Z" fill="white"/>
+  <!-- Górny liść środkowy -->
+  <path d="M256 260 Q240 200 248 150 Q270 195 256 260Z" fill="white"/>
+  <!-- Środkowa żyłka lewego liścia -->
+  <path d="M256 310 Q215 268 182 228" stroke="#6b9080" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <!-- Środkowa żyłka prawego liścia -->
+  <path d="M256 310 Q300 268 338 228" stroke="#6b9080" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.5"/>
+</svg>
