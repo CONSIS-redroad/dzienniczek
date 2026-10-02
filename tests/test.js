@@ -62,9 +62,65 @@ console.log('TZ =',process.env.TZ||'(domyślna)');
  for(const i of man.icons) ok(fs.existsSync(path.join(root,i.src)),'ikona '+i.src);
  ok(man.icons.some(i=>i.sizes==='192x192')&&man.icons.some(i=>i.sizes==='512x512'),'PNG 192 i 512');
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- const shell=JSON.parse(/const SHELL=(\[.*?\]);/.exec(sw)[1]);
+ const shell=JSON.parse(/const SHELL\s*=\s*(\[[\s\S]*?\]);/.exec(sw)[1].replace(/\s+/g,' '));
  for(const f of shell) if(f!=='./') ok(fs.existsSync(path.join(root,f)),'SHELL '+f);
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  for(const m of html.matchAll(/(?:href|src)="((?:icons|css|js)\/[^"]+)"/g)) ok(fs.existsSync(path.join(root,m[1])),'index.html '+m[1]);}
+
+// 7. wersjonowanie: jedna stała APP_VERSION, spójna z sw.js, index.html i listą SHELL
+{const ver=fs.readFileSync(path.join(root,'js','version.js'),'utf8');
+ const m=/const APP_VERSION\s*=\s*"(\d+\.\d+\.\d+)"/.exec(ver);ok(!!m,'js/version.js definiuje APP_VERSION (x.y.z)');
+ const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ ok(/importScripts\(\s*"\.\/js\/version\.js"\s*\)/.test(sw),'sw.js importuje js/version.js');
+ ok(/CACHE_NAME\s*=\s*`\$\{CACHE_PREFIX\}\$\{APP_VERSION\}`/.test(sw),'nazwa cache zależy od APP_VERSION');
+ ok(!/\d+\.\d+\.\d+/.test(sw.replace(/\/\*.*?\*\//g,'')),'sw.js nie ma wpisanej na stałe wersji');
+ ok(!/dzienniczek-v\d|shell-\d/.test(sw),'sw.js bez ręcznej nazwy cache');
+ ok(html.indexOf('js/version.js')>-1&&html.indexOf('js/version.js')<html.indexOf('js/app.js'),'index.html ładuje version.js przed app.js');
+ ok(/data-app-version/.test(html),'wersja widoczna w UI');
+ const shell=JSON.parse(/const SHELL = (\[[\s\S]*?\]);/.exec(sw)[1].replace(/\s+/g,' '));
+ ok(shell.includes('./js/version.js')&&shell.includes('./js/pwa.js'),'SHELL zawiera version.js i pwa.js');
+ // każdy plik js/css/ikon w repo jest w SHELL (nie zostanie pominięty offline) i odwrotnie
+ const onDisk=[];for(const d of ['css','js','icons'])for(const f of fs.readdirSync(path.join(root,d))){if(d!=='icons'||/\.(png|svg)$/.test(f))onDisk.push('./'+d+'/'+f);}
+ for(const f of onDisk)ok(shell.includes(f),'brak w SHELL: '+f);
+ for(const f of shell)if(f!=='./')ok(fs.existsSync(path.join(root,f)),'SHELL: nie istnieje '+f);
+ ok(/updateViaCache:\s*"none"/.test(fs.readFileSync(path.join(root,'js','pwa.js'),'utf8')),'rejestracja z updateViaCache:none');}
+
+// 8. zachowanie SW (symulacja): install, activate czyści tylko stare cache aplikacji, fetch network-first z fallbackiem do cache
+{const listeners={},store={};const cache=n=>store[n]||(store[n]=new Map());
+ const key=r=>typeof r==='string'?new URL(r,'https://x.test/').href:r.url;
+ const caches={open:async n=>({addAll:async rs=>{for(const r of rs)cache(n).set(key(r),'shell')},put:async(r,v)=>{cache(n).set(key(r),v)}}),
+  keys:async()=>Object.keys(store),delete:async n=>delete store[n],
+  match:async r=>{for(const n of Object.keys(store)){const v=store[n].get(key(r).split('?')[0]);if(v)return v}}};
+ let skipped=false,claimed=false,online=true;
+ class Req{constructor(u,o){this.url=new URL(u,'https://x.test/').href;this.method='GET';this.mode=(o&&o.mode)||'cors';}}
+ const g={importScripts:()=>{},caches,Request:Req,URL,Response:{error:()=>'ERR'},AbortController,setTimeout,clearTimeout,
+  fetch:async r=>{if(!online)throw new Error('offline');return{ok:true,body:'net:'+r.url,clone(){return this}}},
+  self:{location:{origin:'https://x.test'},addEventListener:(t,f)=>{listeners[t]=f},skipWaiting:()=>{skipped=true},clients:{claim:async()=>{claimed=true}}}};
+ g.self.self=g.self;vm.createContext(g);
+ vm.runInContext('var APP_VERSION="9.9.9";'+fs.readFileSync(path.join(root,'sw.js'),'utf8').replace(/^importScripts.*$/m,''),g);
+ const run=async(t,ev)=>{let p;ev.waitUntil=x=>{p=x};ev.respondWith=x=>{p=x};listeners[t](ev);return p;};
+ (async()=>{
+  store['dzienniczek-4.0.0']=new Map([['a','1']]);store['cudza-apka']=new Map([['a','1']]);
+  await run('install',{});ok(skipped,'skipWaiting po install');ok(!!store['dzienniczek-9.9.9']&&store['dzienniczek-9.9.9'].size>20,'cache aktualnej wersji wypełniony');
+  await run('activate',{});ok(claimed,'clients.claim po activate');
+  ok(!store['dzienniczek-4.0.0'],'stary cache usunięty');ok(!!store['cudza-apka'],'cudzy cache nietknięty');
+  const req=new Req('https://x.test/js/app.js?v=1');
+  ok(await run('fetch',{request:req})&&(await run('fetch',{request:req})).body==='net:'+req.url,'network-first: online -> sieć');
+  store['dzienniczek-9.9.9'].set('https://x.test/js/app.js','cached');
+  online=false;ok((await run('fetch',{request:req}))==='cached','offline -> cache (ignoruje ?v=)');
+  store['dzienniczek-9.9.9'].set('https://x.test/index.html','INDEX');
+  ok((await run('fetch',{request:new Req('https://x.test/cokolwiek',{mode:'navigate'})}))==='INDEX','offline nawigacja -> index.html');
+  console.log('OK (SW), asercji:',n);
+ })().catch(e=>{console.error(e);process.exit(1)});}
+
+// 9. UI: każdy id używany w JS istnieje w index.html; belka „Statystyki i profil” jest spójna
+{const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ const ids=new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]));
+ for(const f of fs.readdirSync(path.join(root,'js'))){const src=fs.readFileSync(path.join(root,'js',f),'utf8');
+  for(const m of src.matchAll(/getElementById\("([^"]+)"\)/g)) ok(ids.has(m[1]),`id #${m[1]} z js/${f} istnieje w index.html`);}
+ ok(/id="btn-toggle-side"[^>]*aria-expanded="false"[^>]*aria-controls="side-panels"/.test(html)&&ids.has('side-panels'),'belka: aria-expanded + aria-controls -> #side-panels');
+ const css=fs.readFileSync(path.join(root,'css','responsive.css'),'utf8');
+ ok(/\.btn-icon\{width:44px;height:44px\}/.test(css)&&/\.btn\{min-height:44px\}/.test(css),'cele dotykowe >= 44px na telefonie');
+ ok(/viewport-fit=cover/.test(html)&&/safe-area-inset/.test(fs.readFileSync(path.join(root,'css','layout.css'),'utf8')),'safe-area uwzględnione');}
 
 console.log('OK, asercji:',n);

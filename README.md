@@ -13,7 +13,7 @@ Wersja przygotowana na bazie pełniejszego repo `CONSIS-redroad/dzienniczek`, z 
 - manifest wskazuje ikony PNG 192/512 (+ maskable) i SVG; `apple-touch-icon` jest PNG;
 - dane zapisywane są z `schemaVersion: 2`; migracja dat (v3 → daty lokalne) dotyczy tylko danych bez `schemaVersion` i odtwarza datę zależnie od strefy czasowej przeglądarki;
 - przejście do poprzedniego/następnego miesiąca działa poprawnie także z 29.–31. dnia;
-- Service Worker ma wersjonowany cache i usuwa stare cache przy aktywacji;
+- Service Worker ma wersjonowany cache (nazwa zależy od `APP_VERSION`) i usuwa stare cache przy aktywacji;
 - kod aplikacji jest rozdzielony na moduły JS i CSS.
 
 ## Struktura
@@ -33,6 +33,7 @@ css/
   print.css
 tests/test.js
 js/
+  version.js   <- jedyne miejsce z numerem wersji (APP_VERSION)
   config.js
   state.js
   symptoms.js
@@ -44,6 +45,7 @@ js/
   statistics.js
   modal.js
   month-view.js
+  pwa.js       <- rejestracja SW, komunikat „Nowa wersja – odśwież”
   app.js
 ```
 
@@ -60,6 +62,26 @@ TZ=Europe/Warsaw node tests/test.js
 ```
 
 Testy (Node, bez zależności) sprawdzają daty lokalne, migrację w różnych strefach czasowych, nawigację miesięcy oraz istnienie plików z manifestu/SW. Nie zastępują testu w przeglądarce.
+
+## Wersjonowanie i aktualizacje PWA
+
+Numer wersji jest zapisany **w jednym pliku: `js/version.js`** (`const APP_VERSION = "x.y.z";`). Czyta go zarówno `index.html` (pokazuje wersję w stopce i w panelu „Twoje dane”), jak i `sw.js` (`importScripts`), który buduje z niego nazwę cache `dzienniczek-<wersja>`.
+
+**Jak wydać nową wersję:**
+
+1. Wprowadź zmiany w kodzie.
+2. Podbij `APP_VERSION` w `js/version.js` (np. `5.1.0` → `5.1.1`). To jedyna ręczna zmiana wersji.
+3. Jeśli dodałeś/usunąłeś plik `js/`, `css/` lub ikonę, dopisz go do listy `SHELL` w `sw.js` (test `tests/test.js` pilnuje zgodności).
+4. `TZ=Europe/Warsaw node tests/test.js`, potem commit i scalenie do `main`.
+
+**Co się dzieje u użytkownika (bez odinstalowywania):**
+
+- przeglądarka przy otwarciu aplikacji/powrocie do niej sprawdza `sw.js` i `js/version.js` (rejestracja z `updateViaCache:"none"`, więc omija cache HTTP GitHub Pages);
+- nowy Service Worker pobiera pliki do nowego cache, robi `skipWaiting` + `clients.claim` i usuwa stare cache `dzienniczek-*` (cudzych cache nie rusza);
+- otwarta aplikacja pokazuje pasek „Nowa wersja – odśwież”; przycisk przeładowuje stronę. W panelu „Twoje dane” jest też przycisk „Sprawdź aktualizacje”;
+- pliki są pobierane strategią **network-first** (z rewalidacją), a gdy nie ma sieci lub odpowiedź trwa > 4 s, aplikacja używa cache — offline nadal działa. Parametry `?v=` w URL-ach nie są potrzebne (są ignorowane przy dopasowaniu do cache).
+
+Jeśli zmieniasz tylko dane/treść bez podbicia `APP_VERSION`, pliki i tak będą pobierane z sieci (network-first), ale pasek „Nowa wersja” się nie pojawi, a cache offline zostanie odświeżony dopiero przy kolejnym otwarciu online.
 
 ## Uruchomienie
 
