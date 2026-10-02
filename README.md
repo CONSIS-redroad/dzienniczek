@@ -88,3 +88,5 @@ Jeśli zmieniasz tylko dane/treść bez podbicia `APP_VERSION`, pliki i tak będ
 To jest aplikacja statyczna. Nie wymaga Node ani procesu build. Na GitHub Pages powinna działać z katalogu repozytorium; `start_url` i `scope` są względne.
 
 Przed publikacją zalecane jest uruchomienie aplikacji w przeglądarce i sprawdzenie logowania Google, migracji danych, PWA/offline oraz wydruku A4.
+
+Opis systemu: [docs/OPIS-SYSTEMU.md](docs/OPIS-SYSTEMU.md)
