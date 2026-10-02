@@ -1,0 +1,3 @@
+const SYMPTOMS = [
+  "Zaburzenia snu","Zachowania kompulsywne","Ból fizyczny bez powodu","Zaburzenia łaknienia","Stałe zmęczenie","Koncentracja na partnerze","Organizowanie czasu partnerowi","Kontrola trzeźwości","Zamartwianie się","Oczekiwanie podporządkowania","Pouczanie / wyzywanie","Działania za partnera","Planowanie „gdyby nie pił”","Poczucie pustki","Napięcie i rozdrażnienie","Nie mówienie wprost","Pielęgnowanie złości","Skupienie na krzywdzie","Zwiększone konflikty","Powątpiewanie w terapię","Skupienie na innych","Oczekiwanie instrukcji","Usprawiedliwianie","Wymówki","Obwinianie","Agresja","Autoagresja"
+];
