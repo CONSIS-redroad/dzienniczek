@@ -1,5 +1,5 @@
-const CACHE_NAME="dzienniczek-v4-shell-1";
-const SHELL=["./","./index.html","./manifest.json","./css/base.css","./css/layout.css","./css/components.css","./css/calendar.css","./css/modal.css","./css/responsive.css","./css/print.css","./js/config.js","./js/state.js","./js/symptoms.js","./js/utils.js","./js/storage.js","./js/quotes.js","./js/auth.js","./js/calendar.js","./js/statistics.js","./js/modal.js","./js/month-view.js","./js/app.js","./icons/icon.svg"];
+const CACHE_NAME="dzienniczek-v4-shell-2";
+const SHELL=["./","./index.html","./manifest.json","./css/base.css","./css/layout.css","./css/components.css","./css/calendar.css","./css/modal.css","./css/responsive.css","./css/print.css","./js/config.js","./js/state.js","./js/symptoms.js","./js/utils.js","./js/storage.js","./js/quotes.js","./js/auth.js","./js/calendar.js","./js/statistics.js","./js/modal.js","./js/month-view.js","./js/app.js","./icons/icon.svg","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png"];
 const NEVER=["accounts.google.com","googleapis.com","google.com"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
