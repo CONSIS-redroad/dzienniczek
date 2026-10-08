@@ -2,6 +2,14 @@
 
 Wersja przygotowana na bazie pełniejszego repo `CONSIS-redroad/dzienniczek`, z zachowaniem jego funkcji PWA, 25 cytatów, kalendarza, widoku miesięcznego 27 × dni i wydruku A4 poziomo. Z nowszej wersji modularnej przeniesiono podział kodu, tryb gościa i lokalne obliczanie dat.
 
+## Siostrzana aplikacja — TERAPIA (grupa)
+
+Dzienniczek jest **prywatny i osobny** — dane zostają w przeglądarce użytkownika, grupa ich nie widzi.
+Grupowa aplikacja TERAPIA (kalendarz zajęć, prace domowe, czat, archiwum lektur):
+repo [`CONSIS-redroad/terapia`](https://github.com/CONSIS-redroad/terapia) · grupa https://consis-redroad.github.io/terapia/grupa/ · demo https://consis-redroad.github.io/terapia/.
+Obie aplikacje mają **jeden styl** (od wersji 5.2.0): te same kolory jasny/ciemny, motywy tapet (wiśnia na śniegu, deszcz, świt — `js/theme.js`, `css/theme.css`)
+i przyciski w obie strony (w Dzienniczku „Terapia” w nagłówku, w TERAPII „Mój dzienniczek”).
+
 ## Co zostało poprawione
 
 - daty są tworzone jako lokalne `YYYY-MM-DD`, bez `toISOString()`;

@@ -1,0 +1,73 @@
+/* Wygląd jak w TERAPII: tapeta (niebo + scena SVG + cząsteczki + zasłona), narzędzia w nagłówku-pigułce,
+   okno „Wygląd”, czytelność na telefonie. Kolory wyłącznie ze zmiennych --t-* (css/base.css). */
+
+/* ---------- tapeta ---------- */
+.wallpaper{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:var(--t-bg)}
+.wallpaper-scene{position:absolute;inset:-4rem;transition:transform .3s ease-out;will-change:transform}
+.wallpaper-scene svg{width:100%;height:100%;max-width:none;display:block}
+.wallpaper canvas{position:fixed;inset:0;max-width:none}
+.wallpaper-veil{position:absolute;inset:0}
+.landing,.main-app,.app-footer{position:relative;z-index:1}
+.app-footer{color:var(--t-fg2)}
+.landing-hero h1{color:var(--t-fg);letter-spacing:-.02em}
+.landing-hero p{color:var(--t-fg2)}
+.landing-hero{padding:22px 18px;border-radius:var(--radius-xl)}
+@media(prefers-reduced-motion:reduce){.wallpaper-scene{transition:none}}
+
+/* ---------- nagłówek: narzędzia ---------- */
+.header-brand{margin-right:auto}
+.header-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.btn-pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--t-line);background:var(--t-surf);color:var(--t-fg2);font-size:.82rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:background .18s}
+.btn-pill:hover{background:var(--t-surf2)}
+.btn-pill svg{width:18px;height:18px;flex:0 0 auto}
+.btn-terapia{background:var(--t-link-soft);border-color:var(--t-link-line);color:var(--t-link)}
+.btn-terapia:hover{background:var(--t-link-soft);filter:brightness(1.08)}
+.header .btn-ghost{background:var(--t-surf)}
+.header-settings{background:var(--t-surf)}
+.privacy-note .terapia-note{display:block;margin-top:8px}
+
+/* ---------- okno „Wygląd” ---------- */
+.look-modal{width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column}
+.look-section{margin:0 0 18px}
+.look-section:last-child{margin-bottom:0}
+.look-label{display:block;font-weight:700;font-size:.85rem;color:var(--t-fg2);margin:0 0 8px}
+.look-hint{display:block;font-weight:400;font-size:.78rem;color:var(--t-mut2);margin-top:2px}
+.look-pills{display:flex;flex-wrap:wrap;gap:6px}
+.look-pills button,.look-tile{border:1px solid var(--t-line);background:var(--t-surf);color:var(--t-fg2);border-radius:999px;min-height:44px;padding:0 14px;font-weight:600;font-size:.85rem}
+.look-pills button[aria-pressed="true"],.look-tile[aria-pressed="true"]{background:var(--t-acc-soft);border-color:var(--t-acc);color:var(--t-fg)}
+.look-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.look-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;border-radius:14px;padding:8px;text-align:left}
+.look-swatch{display:block;height:46px;border-radius:9px;border:1px solid var(--t-line)}
+.look-tile-name{font-size:.8rem;line-height:1.25}
+.look-veil{width:100%;accent-color:var(--t-acc);min-height:44px}
+.look-note{font-size:.8rem;color:var(--t-mut);margin:8px 0 0}
+.look-footer{display:flex;gap:8px;justify-content:space-between}
+.look-footer .btn{flex:1}
+
+/* ---------- telefon / tablet: tekst ≥ 16 px (skala html 112,5 % → 0,9 rem ≈ 16,2 px), cele dotyku ≥ 44 px ---------- */
+@media(max-width:1023px){
+  .brand-date,.badge,.stat-label,.privacy-note,.version-row,.char-count,.symptom-num,#note-count,.app-footer,.quote-author,
+  .btn-sm,.btn-pill,.app-grid th,.look-hint,.look-note,.look-tile-name,.look-pills button,.look-label,.modal-section-label,.demo-note,.divider{font-size:.9rem}
+  .note-wrap #note-count{font-size:.9rem}
+  .btn-pill,.header .btn-sm{min-height:44px}
+}
+@media(max-width:600px){
+  .header{padding:6px 6px 6px 14px}
+  .btn-pill{width:44px;padding:0}
+  .btn-pill .pill-text{display:none}
+  .header-tools{gap:5px}
+  .look-modal{max-height:94vh;border-radius:20px 20px 0 0}
+  .look-themes{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){
+  .header{padding-left:12px}
+  .header-tools,.auth-user-view{gap:4px}
+  .auth-user-view .user-avatar,.auth-user-view .user-avatar-placeholder{display:none!important}
+}
+/* poprawki po pomiarze (Playwright 390 px): nazwa w pigułce i ⚙️ */
+@media(max-width:1023px){.header .header-brand .brand-name{font-size:.9rem}}
+@media(max-width:600px){.auth-user-view .header-settings{width:44px;height:44px;min-height:44px}}
+@media(max-width:420px){.header .header-brand .brand-name{letter-spacing:.08em}}
+.app-grid{align-items:start}
+#side-panels,#landing{scroll-margin-top:96px}
+.header-brand{flex:1 1 auto;min-width:0}.header-tools,.auth-user-view,#auth-login-view,.btn-pill,.header-settings{flex-shrink:0}

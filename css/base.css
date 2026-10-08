@@ -1,1 +1,36 @@
-:root{--sage:#6b9080;--sage-light:#8fb0a0;--sage-ultra:#edf4f0;--bg:#f5f3ef;--surface:#fff;--surface2:#f1efeb;--navy:#263b42;--muted:#718087;--border:#dfe3df;--danger:#b85c5c;--ok:#4d806a;--shadow:0 8px 28px rgba(38,59,66,.10);--radius:14px;--radius-xl:20px;--header-h:70px}*{box-sizing:border-box}html{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--navy)}body{margin:0;min-height:100vh;background:var(--bg)}body.modal-open{overflow:hidden}button,textarea{font:inherit}button{cursor:pointer}textarea{box-sizing:border-box}.hidden{display:none!important}:focus-visible{outline:2px solid var(--sage);outline-offset:2px}
+/* Motyw jak w TERAPII: zmienne --t-* (jasny domyślnie, ciemny pod [data-theme="dark"]).
+   Atrybut data-theme ustawia skrypt w <head> index.html (bez mignięcia) i js/theme.js (przełącznik system → jasny → ciemny).
+   Stare nazwy (--sage, --surface, --navy…) zostają jako aliasy, żeby reszta CSS działała bez zmian nazw. */
+:root{color-scheme:light;
+--t-bg:#f4f6f8;--t-head:rgba(255,255,255,.82);--t-panel:rgba(255,255,255,.80);--t-panel-solid:#fff;
+--t-surf:rgba(15,23,42,.035);--t-surf2:rgba(15,23,42,.075);--t-line:rgba(15,23,42,.12);
+--t-fg:#0f172a;--t-fg2:#334155;--t-mut:#475569;--t-mut2:#64748b;
+--t-acc:#047857;--t-acc-soft:rgba(16,185,129,.12);--t-acc-line:rgba(16,185,129,.35);--t-on-acc:#fff;
+--t-link:#0369a1;--t-link-soft:rgba(14,165,233,.13);--t-link-line:rgba(56,189,248,.35);
+--t-ok:#047857;--t-warn:#92400e;--t-bad:#be123c;--t-bad-soft:rgba(225,29,72,.09);
+--t-inv-bg:#0f172a;--t-inv-fg:#f8fafc;--t-overlay:rgba(15,23,42,.45);
+--t-shadow:0 10px 30px rgba(15,23,42,.10);--t-shadow-head:0 25px 50px -12px rgba(15,23,42,.25)}
+:root[data-theme="dark"]{color-scheme:dark;
+--t-bg:#070b10;--t-head:rgba(6,8,13,.72);--t-panel:rgba(10,14,22,.76);--t-panel-solid:#0d131c;
+--t-surf:rgba(255,255,255,.035);--t-surf2:rgba(255,255,255,.08);--t-line:rgba(255,255,255,.11);
+--t-fg:#f4f4f5;--t-fg2:#d4d4d8;--t-mut:#a1a1aa;--t-mut2:#8b8b94;
+--t-acc:#6ee7b7;--t-acc-soft:rgba(110,231,183,.12);--t-acc-line:rgba(110,231,183,.32);--t-on-acc:#052e22;
+--t-link:#7dd3fc;--t-link-soft:rgba(14,165,233,.15);--t-link-line:rgba(56,189,248,.30);
+--t-ok:#6ee7b7;--t-warn:#fcd34d;--t-bad:#fda4af;--t-bad-soft:rgba(253,164,175,.12);
+--t-inv-bg:#f4f4f5;--t-inv-fg:#0f172a;--t-overlay:rgba(0,0,0,.6);
+--t-shadow:0 20px 50px rgba(0,0,0,.45);--t-shadow-head:0 25px 50px -12px rgba(0,0,0,.6)}
+:root{--sage:var(--t-acc);--sage-light:var(--t-acc-line);--sage-ultra:var(--t-acc-soft);--bg:var(--t-bg);--surface:var(--t-panel);--surface2:var(--t-surf2);--navy:var(--t-fg);--muted:var(--t-mut);--border:var(--t-line);--danger:var(--t-bad);--ok:var(--t-ok);--shadow:var(--t-shadow);--radius:12px;--radius-xl:16px;--header-h:64px}
+*{box-sizing:border-box}
+html{font-family:"Plus Jakarta Sans",Inter,system-ui,-apple-system,sans-serif;background:var(--t-bg);color:var(--t-fg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html,body{overflow-x:clip;max-width:100%}
+body{margin:0;min-height:100vh;background:var(--t-bg);color:var(--t-fg);overscroll-behavior-x:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body.modal-open{overflow:hidden}
+button,textarea,input,select{font:inherit;color:inherit}
+button,a,input,select,textarea,label{touch-action:manipulation}
+button{cursor:pointer}textarea{box-sizing:border-box;background:var(--t-surf);color:var(--t-fg)}
+img,svg,canvas{max-width:100%}
+.hidden{display:none!important}
+:focus-visible{outline:2px solid var(--t-acc);outline-offset:2px}
+/* TELEFON / TABLET: cała skala +12,5 % (jak w TERAPII) */
+@media(max-width:1023px){html{font-size:112.5%}}
+@media(max-width:640px){input,select,textarea{font-size:16px!important}}
