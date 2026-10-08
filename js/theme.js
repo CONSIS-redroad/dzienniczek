@@ -2,8 +2,9 @@
 // TYLKO wygląd — nie dotyka danych dzienniczka. Ustawienia w localStorage pod kluczami dzienniczek_ui_* (każdy dostęp w try/catch).
 // Sceny i silnik cząsteczek przepisane z TERAPII (frontend/src/themes/*.tsx, components/Wallpaper.tsx) na czysty JS/SVG.
 const Theme = (() => {
-  const MODE_KEY = "dzienniczek_ui_theme_v1";
-  const WALL_KEY = "dzienniczek_ui_wallpaper_v1";
+  // Klucze WSPÓLNE z TERAPIĄ (ten sam adres consis-redroad.github.io): motyw wybrany w jednej aplikacji działa w drugiej.
+  const MODE_KEY = "rr_ui_theme_v1", OLD_MODE_KEY = "dzienniczek_ui_theme_v1";
+  const WALL_KEY = "rr_ui_wallpaper_v1", OLD_WALL_KEY = "dzienniczek_ui_wallpaper_v1";
   const NS = "http://www.w3.org/2000/svg";
   const media = q => { try { return window.matchMedia(q); } catch (e) { return null; } };
   const reduced = () => !!(media("(prefers-reduced-motion: reduce)") || {}).matches;
@@ -90,13 +91,13 @@ const Theme = (() => {
   const DEFAULTS = { themeId: "sakura", particles: true, density: 1, motion: true, veil: 0.15 };
   function loadWall() {
     const base = Object.assign({}, DEFAULTS, { motion: !reduced(), particles: !reduced() });
-    try { const raw = read(WALL_KEY); if (raw) { const p = JSON.parse(raw); if (p && typeof p === "object") Object.assign(base, p); } } catch (e) { /* uszkodzony wpis — domyślne */ }
+    try { const raw = read(WALL_KEY) || read(OLD_WALL_KEY); if (raw) { const p = JSON.parse(raw); if (p && typeof p === "object") Object.assign(base, p); } } catch (e) { /* uszkodzony wpis — domyślne */ }
     base.veil = Math.min(0.6, Math.max(0, Number(base.veil) || 0));
     if (![0.5, 1, 1.6].includes(base.density)) base.density = 1;
     return base;
   }
   let wall = loadWall();
-  let mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY));
+  let mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY) || read(OLD_MODE_KEY));
   const isDark = () => document.documentElement.dataset.theme === "dark";
 
   function applyMode() {
@@ -239,6 +240,11 @@ const Theme = (() => {
   function init() {
     applyMode();
     renderWallpaper();
+    // zmiana wyglądu w TERAPII (inna karta, ten sam adres) → od razu tutaj
+    window.addEventListener("storage", e => {
+      if (e.key === MODE_KEY) { mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY)); applyMode(); syncDialog(); }
+      if (e.key === WALL_KEY) { wall = loadWall(); renderWallpaper(); syncDialog(); }
+    });
     const dq = media("(prefers-color-scheme: dark)");
     if (dq && dq.addEventListener) dq.addEventListener("change", () => { if (mode === "system") applyMode(); });
     const rq = media("(prefers-reduced-motion: reduce)");
