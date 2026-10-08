@@ -1,4 +1,4 @@
-// Wygląd jak w TERAPII: tryb kolorów (system → jasny → ciemny), tapety (sakura, deszcz, świt) i okno „Wygląd”.
+// Wygląd jak w TERAPII: tryb kolorów (system → jasny → ciemny), tapety (sakura, deszcz, świt, księżyc) i okno „Wygląd”.
 // TYLKO wygląd — nie dotyka danych dzienniczka. Ustawienia w localStorage pod kluczami dzienniczek_ui_* (każdy dostęp w try/catch).
 // Sceny i silnik cząsteczek przepisane z TERAPII (frontend/src/themes/*.tsx, components/Wallpaper.tsx) na czysty JS/SVG.
 const Theme = (() => {
@@ -67,6 +67,33 @@ const Theme = (() => {
     for (let i = 0; i < 6; i++) el("rect", { x: 700 - i * 18, y: 565 + i * 22, width: 240 + i * 36, height: 3, rx: 1.5, fill: dark ? "#475569" : "#fef3c7", opacity: (0.5 - i * 0.07).toFixed(2) }, svg);
   }
 
+  // Księżyc — zdjęcie: themes/ksiezyc.webp, lokalna kopia (1024 px, WebP z przezroczystym tłem) zdjęcia
+  // NASA NHQ201903160003 „International Space Station transits the Moon” (16.03.2019, fot. NASA/Joel Kowsky),
+  // https://images.nasa.gov/details/NHQ201903160003. Zasady NASA (https://www.nasa.gov/nasa-brand-center/images-and-media/):
+  // materiały NASA nie są objęte prawem autorskim w USA, wolno ich używać bez zgody; nie sugerujemy poparcia NASA, bez logo NASA.
+  // Kopia u nas (nie link do NASA): CSP img-src 'self' + działanie offline w PWA. Ta sama scena co TERAPIA themes/ksiezyc.tsx.
+  function sceneKsiezyc(svg, dark) {
+    const CX = 700, CY = 215, R = 122, rnd = seeded(29);
+    const defs = el("defs", {}, svg), rg = el("radialGradient", { id: "ksiezyc-halo" }, defs);
+    el("stop", { offset: "0.55", "stop-color": dark ? "#c7d2fe" : "#ffffff", "stop-opacity": dark ? "0.22" : "0.45" }, rg);
+    el("stop", { offset: "1", "stop-color": dark ? "#c7d2fe" : "#ffffff", "stop-opacity": "0" }, rg);
+    const mg = el("linearGradient", { id: "ksiezyc-mist", x1: 0, y1: 0, x2: 0, y2: 1 }, defs), mc = dark ? "#94a3b8" : "#ffffff";
+    el("stop", { offset: "0", "stop-color": mc, "stop-opacity": "0" }, mg);
+    el("stop", { offset: "0.6", "stop-color": mc, "stop-opacity": dark ? "0.07" : "0.3" }, mg);
+    el("stop", { offset: "1", "stop-color": mc, "stop-opacity": "0" }, mg);
+    const g = el("g", { fill: dark ? "#e2e8f0" : "#ffffff" }, svg);
+    for (let i = 0; i < 46; i++) {
+      const x = rnd() * 1200, y = Math.pow(rnd(), 1.4) * 520, r = 0.6 + rnd() * 1.3, o = 0.25 + rnd() * 0.5;
+      el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: r.toFixed(2), opacity: (dark ? o : o * 0.6).toFixed(2) }, g);
+    }
+    el("circle", { cx: CX, cy: CY, r: R * 1.9, fill: "url(#ksiezyc-halo)" }, svg);
+    el("circle", { cx: CX, cy: CY, r: R, fill: dark ? "#161e33" : "#7f8bc2", opacity: dark ? "0.9" : "0.3" }, svg);
+    el("image", { href: "themes/ksiezyc.webp", x: CX - R, y: CY - R, width: R * 2, height: R * 2, opacity: dark ? "0.96" : "0.9", preserveAspectRatio: "xMidYMid meet" }, svg);
+    el("path", { d: "M0 600 C 200 560, 400 585, 600 565 C 820 545, 1000 580, 1200 560 L1200 800 L0 800 Z", fill: dark ? "#121a2e" : "#8f98c6", opacity: dark ? "0.95" : "0.55" }, svg);
+    el("rect", { x: 0, y: 540, width: 1200, height: 100, fill: "url(#ksiezyc-mist)" }, svg);
+    el("path", { d: "M0 690 C 260 660, 520 705, 780 680 C 960 664, 1080 690, 1200 676 L1200 800 L0 800 Z", fill: dark ? "#0a101d" : "#7a83b3", opacity: dark ? "1" : "0.6" }, svg);
+  }
+
   // REJESTR MOTYWÓW (te same id i nazwy co w TERAPII) + „gładkie tło” dla osób, którym obraz przeszkadza.
   const THEMES = [
     { id: "sakura", name: "Wiśnia na śniegu", description: "Kwitnąca wiśnia nad zaśnieżonymi wzgórzami, płatki opadają powoli.",
@@ -81,6 +108,11 @@ const Theme = (() => {
       sky: { light: "linear-gradient(180deg,#e0e7ff 0%,#fde2e4 55%,#fef3c7 100%)", dark: "linear-gradient(180deg,#0b1020 0%,#1e1b2e 60%,#1f2937 100%)" },
       scene: sceneSwit, particles: "none", colors: { light: [], dark: [] },
       preview: "linear-gradient(180deg,#e0e7ff 0%,#fde2e4 55%,#fef3c7 100%)" },
+    { id: "ksiezyc", name: "Księżyc", description: "Nocne niebo z Księżycem (zdjęcie: NASA/Joel Kowsky), gwiazdy migoczą, co jakiś czas cicho przelatują komety.",
+      // jasny = zmierzch nad Księżycem (tło na tyle jasne, że ciemny tekst pozostaje czytelny)
+      sky: { light: "linear-gradient(180deg,#8a97cf 0%,#aab3de 38%,#ddd6ee 72%,#f8e6dc 100%)", dark: "linear-gradient(180deg,#05070f 0%,#0b1224 55%,#111a30 100%)" },
+      scene: sceneKsiezyc, particles: "stars", colors: { light: ["#ffffff", "#eef2ff", "#fdf2f8"], dark: ["#f8fafc", "#dbeafe", "#fef3c7"] },
+      preview: "radial-gradient(circle at 68% 34%,#e5e7eb 0 13%,#94a3b8 14%,#1e293b 22%,#05070f 100%)" },
     { id: "brak", name: "Gładkie tło", description: "Bez obrazka i bez ruchu.",
       sky: { light: "var(--t-bg)", dark: "var(--t-bg)" }, scene: null, particles: "none", colors: { light: [], dark: [] },
       preview: "linear-gradient(180deg,#f4f6f8 0%,#e2e8f0 100%)" }
@@ -138,7 +170,7 @@ const Theme = (() => {
     const colors = dark ? t.colors.dark : t.colors.light;
     const cvs = document.getElementById("wallpaper-particles");
     cvs.hidden = !(wall.particles && t.particles !== "none" && colors.length && !reduced());
-    if (!cvs.hidden) stopParticles = particles(cvs, t.particles, colors, wall.density);
+    if (!cvs.hidden) stopParticles = t.particles === "stars" ? starfield(cvs, colors, wall.density, !!wall.motion) : particles(cvs, t.particles, colors, wall.density);
     if (stopMotion) { stopMotion(); stopMotion = null; }
     layer.style.transform = "";
     if (wall.motion && !reduced()) stopMotion = motion(layer);
@@ -182,6 +214,68 @@ const Theme = (() => {
     document.addEventListener("visibilitychange", onVis);
     raf = requestAnimationFrame(frame);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); document.removeEventListener("visibilitychange", onVis); ctx.clearRect(0, 0, w, h); };
+  }
+
+  // Gwiazdy + komety (motyw Księżyc) — przepisane z TERAPII components/Wallpaper.tsx → starfield().
+  // Gwiazdy migoczą; co 8–20 s pojedyncza spadająca gwiazda, co 20–60 s cichy deszcz 3–8 komet (2–4 s).
+  // Bez ruchu (ustawienie „Ruch tła: wył.”) gwiazdy rysowane raz, bez komet i bez pętli (reduced-motion ukrywa canvas wyżej).
+  // Test / pokaz: window.dispatchEvent(new Event("rr:komety")) albo Theme.komety() — deszcz komet od razu.
+  function starfield(cvs, colors, density, animate) {
+    const ctx = cvs.getContext && cvs.getContext("2d");
+    if (!ctx) return null;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0, h = 0, stars = [];
+    const area = Math.min(1.6, (window.innerWidth * window.innerHeight) / (1280 * 800));
+    const n = Math.max(20, Math.round(70 * density * Math.max(0.45, area)));
+    const comets = [];
+    const place = () => { stars = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.pow(Math.random(), 1.3) * h * 0.8, r: 0.5 + Math.random() * 1.1,
+      o: 0.35 + Math.random() * 0.55, ph: Math.random() * Math.PI * 2, sp: 0.6 + Math.random() * 1.6, c: colors[Math.floor(Math.random() * colors.length)] })); };
+    const draw = time => {
+      ctx.clearRect(0, 0, w, h);
+      for (const s of stars) { ctx.globalAlpha = animate ? s.o * (0.6 + 0.4 * Math.sin(time * s.sp + s.ph)) : s.o; ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); }
+      for (const c of comets) {
+        if (c.delay > 0) continue;
+        const k = c.age / c.life, fade = Math.min(1, k * 5, (1 - k) * 3) * (c.big ? 0.75 : 0.55);
+        const sp = Math.hypot(c.vx, c.vy), tx = c.x - (c.vx / sp) * c.len, ty = c.y - (c.vy / sp) * c.len;
+        const g = ctx.createLinearGradient(c.x, c.y, tx, ty); g.addColorStop(0, colors[0]); g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.globalAlpha = fade; ctx.strokeStyle = g; ctx.lineWidth = c.w; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(tx, ty); ctx.stroke();
+        if (c.big) { ctx.fillStyle = colors[0]; ctx.beginPath(); ctx.arc(c.x, c.y, c.w * 1.1, 0, Math.PI * 2); ctx.fill(); }
+      }
+      ctx.globalAlpha = 1;
+    };
+    const resize = () => { w = window.innerWidth; h = window.innerHeight; cvs.width = w * dpr; cvs.height = h * dpr; cvs.style.width = w + "px"; cvs.style.height = h + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); place(); if (!animate) draw(0); };
+    resize(); window.addEventListener("resize", resize);
+    if (!animate) return () => { window.removeEventListener("resize", resize); ctx.clearRect(0, 0, w, h); };
+    const spawn = (big, delay, angle) => {
+      const speed = big ? 420 + Math.random() * 220 : 700 + Math.random() * 300; // px/s
+      comets.push({ x: w * (0.25 + Math.random() * 0.95), y: -20 + Math.random() * h * 0.4, vx: -Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        len: big ? 120 + Math.random() * 110 : 60 + Math.random() * 50, w: big ? 1.4 + Math.random() * 0.9 : 1,
+        life: big ? 1.4 + Math.random() * 0.9 : 0.7 + Math.random() * 0.4, age: 0, delay, big });
+    };
+    const shower = () => {
+      const count = Math.max(3, Math.min(8, Math.round((3 + Math.random() * 5) * Math.min(1, density + 0.2))));
+      const angle = (24 + Math.random() * 12) * Math.PI / 180; // jeden kierunek dla całej serii
+      for (let i = 0; i < count; i++) spawn(true, Math.random() * 2.6, angle + (Math.random() - 0.5) * 0.06);
+    };
+    let raf = 0, last = 0, clock = 0, nextStar = 8 + Math.random() * 12, nextShower = 20 + Math.random() * 40;
+    const frame = now => {
+      const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; // po powrocie karty bez „skoku”
+      last = now; clock += dt;
+      if ((nextStar -= dt) <= 0) { spawn(false, 0, (20 + Math.random() * 25) * Math.PI / 180); nextStar = 8 + Math.random() * 12; }
+      if ((nextShower -= dt) <= 0) { shower(); nextShower = 20 + Math.random() * 40; }
+      for (let i = comets.length - 1; i >= 0; i--) {
+        const c = comets[i];
+        if (c.delay > 0) { c.delay -= dt; continue; }
+        c.age += dt; c.x += c.vx * dt; c.y += c.vy * dt; if (c.age >= c.life) comets.splice(i, 1);
+      }
+      draw(clock); raf = requestAnimationFrame(frame);
+    };
+    const onVis = () => { cancelAnimationFrame(raf); last = 0; if (!document.hidden) raf = requestAnimationFrame(frame); };
+    const onShower = () => { shower(); nextShower = 20 + Math.random() * 40; };
+    document.addEventListener("visibilitychange", onVis); window.addEventListener("rr:komety", onShower);
+    if (!document.hidden) raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("rr:komety", onShower); ctx.clearRect(0, 0, w, h); };
   }
 
   // Ruch jak w TERAPII (bez obracania przeciąganiem — dzienniczek ma kalendarz pod palcem): paralaksa myszą + lekkie unoszenie przy przewijaniu.
@@ -265,6 +359,7 @@ const Theme = (() => {
     document.addEventListener("keydown", e => { if (e.key === "Escape") closeDialog(); });
   }
 
-  return { init, setMode, themes: THEMES, get mode() { return mode; }, get wallpaper() { return Object.assign({}, wall); } };
+  const komety = () => window.dispatchEvent(new Event("rr:komety")); // pokaz / test deszczu komet
+  return { init, setMode, komety, themes: THEMES, get mode() { return mode; }, get wallpaper() { return Object.assign({}, wall); } };
 })();
 document.addEventListener("DOMContentLoaded", () => Theme.init());

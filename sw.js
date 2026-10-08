@@ -7,7 +7,8 @@ const SHELL = ["./", "./index.html", "./manifest.json",
   "./css/base.css", "./css/layout.css", "./css/components.css", "./css/calendar.css", "./css/modal.css", "./css/responsive.css", "./css/theme.css", "./css/print.css",
   "./js/version.js", "./js/config.js", "./js/state.js", "./js/symptoms.js", "./js/utils.js", "./js/storage.js", "./js/quotes.js", "./js/auth.js",
   "./js/calendar.js", "./js/statistics.js", "./js/modal.js", "./js/month-view.js", "./js/theme.js", "./js/pwa.js", "./js/app.js",
-  "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
+  "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png",
+  "./themes/ksiezyc.webp"];
 const NEVER = ["accounts.google.com", "googleapis.com", "google.com"];
 const NETWORK_TIMEOUT_MS = 4000;
 
