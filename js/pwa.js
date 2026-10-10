@@ -9,8 +9,14 @@ const Pwa = {
     document.getElementById("btn-check-update")?.addEventListener("click", () => this.check(true));
     if (!("serviceWorker" in navigator)) return;
     this.hadController = !!navigator.serviceWorker.controller;
-    // nowy SW przejął kartę (skipWaiting + clients.claim); przy pierwszej instalacji nie ma czego odświeżać
-    navigator.serviceWorker.addEventListener("controllerchange", () => { if (this.hadController && !this.reloading) this.showUpdate(); this.hadController = true; });
+    // nowy SW przejął kartę (skipWaiting + clients.claim) -> automatyczne przeładowanie na nową wersję
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (this.hadController && !this.reloading) {
+        this.reloading = true;
+        location.reload();
+      }
+      this.hadController = true;
+    });
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
         .then(reg => { this.reg = reg; reg.update().catch(() => {}); })
