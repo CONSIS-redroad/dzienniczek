@@ -4,7 +4,9 @@
 const Theme = (() => {
   // Klucze WSPÓLNE z TERAPIĄ (ten sam adres consis-redroad.github.io): motyw wybrany w jednej aplikacji działa w drugiej.
   const MODE_KEY = "rr_ui_theme_v1", OLD_MODE_KEY = "dzienniczek_ui_theme_v1";
-  const WALL_KEY = "rr_ui_wallpaper_v1", OLD_WALL_KEY = "dzienniczek_ui_wallpaper_v1";
+  // v2 = RZADKI wybór tapety (tylko pola zmienione przez użytkownika); v1 / stary klucz czytane raz, do migracji.
+  // Osobny klucz: stare wersje (TERAPIA/Dzienniczek sprzed 11.10) piszą do v1 pełny zestaw i nie psują v2.
+  const WALL_KEY = "rr_ui_wallpaper_v2", V1_WALL_KEY = "rr_ui_wallpaper_v1", OLD_WALL_KEY = "dzienniczek_ui_wallpaper_v1";
   const NS = "http://www.w3.org/2000/svg";
   const media = q => { try { return window.matchMedia(q); } catch (e) { return null; } };
   const reduced = () => !!(media("(prefers-reduced-motion: reduce)") || {}).matches;
@@ -121,12 +123,36 @@ const Theme = (() => {
 
   /* ---------- ustawienia ---------- */
   const DEFAULTS = { themeId: "sakura", particles: true, density: 1, motion: true, veil: 0.15 };
+  // ZAPISUJEMY TYLKO POLA ZMIENIONE PRZEZ UŻYTKOWNIKA (Bartek 11.10, ta sama zasada co TERAPIA/czat — useWallpaper.ts):
+  // pod rr_ui_wallpaper_v2 leży rzadki wybór, np. { density: 1.6 }; na ekranie = DEFAULTS ⊕ wybór. Dzięki temu nowy /
+  // poprawiony motyw dochodzi do każdego, kto go sam nie wybrał. Migracja raz (gdy v2 nie ma): ze starego zapisu zostają
+  // motyw/gęstość/zasłona różne od DAWNYCH domyślnych (na sztywno — nie z DEFAULTS, bo te się zmienią); wynik od razu w v2.
+  const FIELDS = ["themeId", "particles", "density", "motion", "veil"];
+  const OLD_DEFAULTS = { themeId: "sakura", density: 1, veil: 0.15 };   // dawne domyślne — nie zmieniać
+  function cleanChoice(o) {
+    const c = {};
+    if (!o || typeof o !== "object" || Array.isArray(o)) return c;
+    if (typeof o.themeId === "string") c.themeId = o.themeId;
+    if (typeof o.particles === "boolean") c.particles = o.particles;
+    if (typeof o.motion === "boolean") c.motion = o.motion;
+    if ([0.5, 1, 1.6].includes(o.density)) c.density = o.density;
+    if (typeof o.veil === "number" && o.veil >= 0 && o.veil <= 0.6) c.veil = o.veil;
+    return c;
+  }
+  function loadChoice() {
+    try {
+      const v2 = read(WALL_KEY);
+      if (v2 !== null) return cleanChoice(JSON.parse(v2));
+      const raw = read(V1_WALL_KEY) || read(OLD_WALL_KEY), c = cleanChoice(raw ? JSON.parse(raw) : null), kept = {};
+      ["themeId", "density", "veil"].forEach(k => { if (k in c && c[k] !== OLD_DEFAULTS[k]) kept[k] = c[k]; });
+      write(WALL_KEY, JSON.stringify(kept));
+      return kept;
+    } catch (e) { return {}; /* uszkodzony wpis — domyślne */ }
+  }
+  function saveChoice() { write(WALL_KEY, JSON.stringify(choice)); }   // pusty {} = „bez wyboru”, bez ponownej migracji
+  let choice = loadChoice();
   function loadWall() {
-    const base = Object.assign({}, DEFAULTS, { motion: !reduced(), particles: !reduced() });
-    try { const raw = read(WALL_KEY) || read(OLD_WALL_KEY); if (raw) { const p = JSON.parse(raw); if (p && typeof p === "object") Object.assign(base, p); } } catch (e) { /* uszkodzony wpis — domyślne */ }
-    base.veil = Math.min(0.6, Math.max(0, Number(base.veil) || 0));
-    if (![0.5, 1, 1.6].includes(base.density)) base.density = 1;
-    return base;
+    return Object.assign({}, DEFAULTS, { motion: !reduced(), particles: !reduced() }, choice);
   }
   let wall = loadWall();
   let mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY) || read(OLD_MODE_KEY));
@@ -143,7 +169,9 @@ const Theme = (() => {
   }
   function setMode(m) { mode = m; write(MODE_KEY, m === "system" ? null : m); applyMode(); syncDialog(); }
   function setWall(patch) {
-    wall = Object.assign({}, wall, patch); write(WALL_KEY, JSON.stringify(wall));
+    FIELDS.forEach(k => { if (k in patch && patch[k] !== wall[k]) choice[k] = patch[k]; });
+    saveChoice();
+    wall = Object.assign({}, wall, patch);
     if (Object.keys(patch).length === 1 && "veil" in patch) paintVeil(); else renderWallpaper();
     syncDialog();
   }
@@ -337,7 +365,7 @@ const Theme = (() => {
     // zmiana wyglądu w TERAPII (inna karta, ten sam adres) → od razu tutaj
     window.addEventListener("storage", e => {
       if (e.key === MODE_KEY) { mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY)); applyMode(); syncDialog(); }
-      if (e.key === WALL_KEY) { wall = loadWall(); renderWallpaper(); syncDialog(); }
+      if (e.key === WALL_KEY) { choice = loadChoice(); wall = loadWall(); renderWallpaper(); syncDialog(); }
     });
     const dq = media("(prefers-color-scheme: dark)");
     if (dq && dq.addEventListener) dq.addEventListener("change", () => { if (mode === "system") applyMode(); });
@@ -346,7 +374,7 @@ const Theme = (() => {
     document.getElementById("btn-look")?.addEventListener("click", openDialog);
     document.getElementById("btn-close-look")?.addEventListener("click", closeDialog);
     document.getElementById("btn-close-look-2")?.addEventListener("click", closeDialog);
-    document.getElementById("btn-look-reset")?.addEventListener("click", () => { wall = Object.assign({}, DEFAULTS, { motion: !reduced(), particles: !reduced() }); write(WALL_KEY, null); setMode("system"); renderWallpaper(); syncDialog(); });
+    document.getElementById("btn-look-reset")?.addEventListener("click", () => { choice = {}; saveChoice(); wall = loadWall(); setMode("system"); renderWallpaper(); syncDialog(); });
     const o = document.getElementById("look-overlay");
     o?.addEventListener("click", e => {
       if (e.target === e.currentTarget) { closeDialog(); return; }
