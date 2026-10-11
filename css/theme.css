@@ -71,3 +71,5 @@
 .app-grid{align-items:start}
 #side-panels,#landing{scroll-margin-top:96px}
 .header-brand{flex:1 1 auto;min-width:0}.header-tools,.auth-user-view,#auth-login-view,.btn-pill,.header-settings{flex-shrink:0}
+/* Chmury motywu Księżyc (dzień) — ruch tylko z klasą .rr-chmura (gdy „Ruch tła” włączony) */
+@keyframes rr-chmura{from{transform:translateX(-160px)}to{transform:translateX(160px)}}.rr-chmura{animation:rr-chmura var(--rr-chmura-d,160s) ease-in-out infinite alternate}@media (prefers-reduced-motion:reduce){.rr-chmura{animation:none}}

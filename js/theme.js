@@ -76,7 +76,7 @@ const Theme = (() => {
   // Kopia u nas (nie link do NASA): CSP img-src 'self' + działanie offline w PWA. Ta sama scena co TERAPIA themes/ksiezyc.tsx.
   // DZIEŃ (tryb jasny) — Bartek 11.10 23:39: „księżyc w ciemnym, a słońce w jasnym”. Słońce w miejscu Księżyca,
   // błękitne niebo, chmury płyną powoli, zielone wzgórza; bez gwiazd i komet. Ta sama scena co TERAPIA themes/ksiezyc.tsx (Day).
-  function sceneSlonce(svg) {
+  function sceneSlonce(svg, motion) {
     const CX = 700, CY = 215, R = 122, defs = el("defs", {}, svg);
     const hg = el("radialGradient", { id: "slonce-halo" }, defs);
     [["0", "#fffbe6", "0.95"], ["0.35", "#fff3c4", "0.55"], ["1", "#fff3c4", "0"]].forEach(([o, c, a]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": a }, hg));
@@ -87,8 +87,8 @@ const Theme = (() => {
     el("circle", { cx: CX, cy: CY, r: R * 2.6, fill: "url(#slonce-halo)" }, svg);
     el("circle", { cx: CX, cy: CY, r: R * 0.62, fill: "url(#slonce-tarcza)" }, svg);
     [[120, 150, 1.15, 140], [860, 95, 0.85, 180], [420, 300, 0.7, 160], [1010, 330, 1, 200]].forEach(([x, y, sc, d]) => {
-      const g = el("g", { opacity: "0.88" }, svg);
-      el("animateTransform", { attributeName: "transform", type: "translate", from: "-160 0", to: "160 0", dur: d + "s", repeatCount: "indefinite", additive: "sum" }, g);
+      // ruch CSS (.rr-chmura w css/theme.css), tylko gdy „Ruch tła” włączony — SMIL płynął mimo „wył.” (adwersarz 11.10)
+      const g = el("g", { opacity: "0.88", class: motion ? "rr-chmura" : "", style: `--rr-chmura-d:${d}s` }, svg);
       const c = el("g", { transform: `translate(${x} ${y}) scale(${sc})`, fill: "#ffffff" }, g);
       [[0, 0, 70, 26], [-42, 8, 44, 20], [46, 10, 50, 19], [6, -18, 40, 24]].forEach(([cx, cy, rx, ry]) => el("ellipse", { cx, cy, rx, ry }, c));
     });
@@ -96,8 +96,8 @@ const Theme = (() => {
     el("rect", { x: 0, y: 540, width: 1200, height: 100, fill: "url(#slonce-mgla)" }, svg);
     el("path", { d: "M0 690 C 260 660, 520 705, 780 680 C 960 664, 1080 690, 1200 676 L1200 800 L0 800 Z", fill: "#7cb98b" }, svg);
   }
-  function sceneKsiezyc(svg, dark) {
-    if (!dark) return sceneSlonce(svg);
+  function sceneKsiezyc(svg, dark, motion) {
+    if (!dark) return sceneSlonce(svg, motion);
     const CX = 700, CY = 215, R = 122, rnd = seeded(29);
     const defs = el("defs", {}, svg), rg = el("radialGradient", { id: "ksiezyc-halo" }, defs);
     el("stop", { offset: "0.55", "stop-color": dark ? "#c7d2fe" : "#ffffff", "stop-opacity": dark ? "0.22" : "0.45" }, rg);
@@ -214,7 +214,7 @@ const Theme = (() => {
     layer.replaceChildren();
     if (t.scene) {
       const svg = el("svg", { viewBox: "0 0 1200 800", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true", focusable: "false" });
-      t.scene(svg, dark); layer.appendChild(svg);
+      t.scene(svg, dark, !!wall.motion && !reduced()); layer.appendChild(svg);
     }
     paintVeil();
     if (stopParticles) { stopParticles(); stopParticles = null; }
