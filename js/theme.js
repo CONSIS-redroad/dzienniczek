@@ -74,7 +74,30 @@ const Theme = (() => {
   // https://images.nasa.gov/details/NHQ201903160003. Zasady NASA (https://www.nasa.gov/nasa-brand-center/images-and-media/):
   // materiały NASA nie są objęte prawem autorskim w USA, wolno ich używać bez zgody; nie sugerujemy poparcia NASA, bez logo NASA.
   // Kopia u nas (nie link do NASA): CSP img-src 'self' + działanie offline w PWA. Ta sama scena co TERAPIA themes/ksiezyc.tsx.
+  // DZIEŃ (tryb jasny) — Bartek 11.10 23:39: „księżyc w ciemnym, a słońce w jasnym”. Słońce w miejscu Księżyca,
+  // błękitne niebo, chmury płyną powoli, zielone wzgórza; bez gwiazd i komet. Ta sama scena co TERAPIA themes/ksiezyc.tsx (Day).
+  function sceneSlonce(svg) {
+    const CX = 700, CY = 215, R = 122, defs = el("defs", {}, svg);
+    const hg = el("radialGradient", { id: "slonce-halo" }, defs);
+    [["0", "#fffbe6", "0.95"], ["0.35", "#fff3c4", "0.55"], ["1", "#fff3c4", "0"]].forEach(([o, c, a]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": a }, hg));
+    const tg = el("radialGradient", { id: "slonce-tarcza", cx: "0.42", cy: "0.4" }, defs);
+    [["0", "#fffdf2"], ["0.7", "#ffe9a3"], ["1", "#ffd56b"]].forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, tg));
+    const mg = el("linearGradient", { id: "slonce-mgla", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    [["0", "0"], ["0.6", "0.35"], ["1", "0"]].forEach(([o, a]) => el("stop", { offset: o, "stop-color": "#ffffff", "stop-opacity": a }, mg));
+    el("circle", { cx: CX, cy: CY, r: R * 2.6, fill: "url(#slonce-halo)" }, svg);
+    el("circle", { cx: CX, cy: CY, r: R * 0.62, fill: "url(#slonce-tarcza)" }, svg);
+    [[120, 150, 1.15, 140], [860, 95, 0.85, 180], [420, 300, 0.7, 160], [1010, 330, 1, 200]].forEach(([x, y, sc, d]) => {
+      const g = el("g", { opacity: "0.88" }, svg);
+      el("animateTransform", { attributeName: "transform", type: "translate", from: "-160 0", to: "160 0", dur: d + "s", repeatCount: "indefinite", additive: "sum" }, g);
+      const c = el("g", { transform: `translate(${x} ${y}) scale(${sc})`, fill: "#ffffff" }, g);
+      [[0, 0, 70, 26], [-42, 8, 44, 20], [46, 10, 50, 19], [6, -18, 40, 24]].forEach(([cx, cy, rx, ry]) => el("ellipse", { cx, cy, rx, ry }, c));
+    });
+    el("path", { d: "M0 600 C 200 560, 400 585, 600 565 C 820 545, 1000 580, 1200 560 L1200 800 L0 800 Z", fill: "#9fcfa9", opacity: "0.85" }, svg);
+    el("rect", { x: 0, y: 540, width: 1200, height: 100, fill: "url(#slonce-mgla)" }, svg);
+    el("path", { d: "M0 690 C 260 660, 520 705, 780 680 C 960 664, 1080 690, 1200 676 L1200 800 L0 800 Z", fill: "#7cb98b" }, svg);
+  }
   function sceneKsiezyc(svg, dark) {
+    if (!dark) return sceneSlonce(svg);
     const CX = 700, CY = 215, R = 122, rnd = seeded(29);
     const defs = el("defs", {}, svg), rg = el("radialGradient", { id: "ksiezyc-halo" }, defs);
     el("stop", { offset: "0.55", "stop-color": dark ? "#c7d2fe" : "#ffffff", "stop-opacity": dark ? "0.22" : "0.45" }, rg);
@@ -110,10 +133,10 @@ const Theme = (() => {
       sky: { light: "linear-gradient(180deg,#e0e7ff 0%,#fde2e4 55%,#fef3c7 100%)", dark: "linear-gradient(180deg,#0b1020 0%,#1e1b2e 60%,#1f2937 100%)" },
       scene: sceneSwit, particles: "none", colors: { light: [], dark: [] },
       preview: "linear-gradient(180deg,#e0e7ff 0%,#fde2e4 55%,#fef3c7 100%)" },
-    { id: "ksiezyc", name: "Księżyc", description: "Nocne niebo z Księżycem (zdjęcie: NASA/Joel Kowsky), gwiazdy migoczą, co jakiś czas cicho przelatują komety.",
-      // jasny = zmierzch nad Księżycem (tło na tyle jasne, że ciemny tekst pozostaje czytelny)
-      sky: { light: "linear-gradient(180deg,#8a97cf 0%,#aab3de 38%,#ddd6ee 72%,#f8e6dc 100%)", dark: "linear-gradient(180deg,#05070f 0%,#0b1224 55%,#111a30 100%)" },
-      scene: sceneKsiezyc, particles: "stars", colors: { light: ["#ffffff", "#eef2ff", "#fdf2f8"], dark: ["#f8fafc", "#dbeafe", "#fef3c7"] },
+    { id: "ksiezyc", name: "Księżyc", description: "Noc z Księżycem (zdjęcie: NASA/Joel Kowsky), gwiazdy i komety; w trybie jasnym dzień ze Słońcem i chmurami.",
+      // jasny = DZIEŃ ze Słońcem (jasne niebo — ciemny tekst czytelny); ciemny = noc z Księżycem
+      sky: { light: "linear-gradient(180deg,#6fb1ea 0%,#9fcdf3 40%,#d6ecfa 75%,#f1f8fd 100%)", dark: "linear-gradient(180deg,#05070f 0%,#0b1224 55%,#111a30 100%)" },
+      scene: sceneKsiezyc, particles: "stars", colors: { light: [], dark: ["#f8fafc", "#dbeafe", "#fef3c7"] },
       preview: "radial-gradient(circle at 68% 34%,#e5e7eb 0 13%,#94a3b8 14%,#1e293b 22%,#05070f 100%)" },
     { id: "brak", name: "Gładkie tło", description: "Bez obrazka i bez ruchu.",
       sky: { light: "var(--t-bg)", dark: "var(--t-bg)" }, scene: null, particles: "none", colors: { light: [], dark: [] },
