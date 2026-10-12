@@ -3,7 +3,7 @@ const AppState = {
   days: {},
   quotes: {},
   kolo: [],
-  wstyd: [],       // Dzienniczek wstydu: wpisy (js/wstyd.js)        // Koło uczuć: zaznaczone „grupa|słowo” (js/kolo.js)
+  wstyd: [],       // Dzienniczek wstydu: wpisy (js/wstyd.js, osobny klucz w Storage)        // Koło uczuć: zaznaczone „grupa|słowo” (js/kolo.js)
   calendarDate: new Date(),
   currentDay: null,
 };

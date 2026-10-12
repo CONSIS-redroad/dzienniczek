@@ -16,7 +16,8 @@ const Wstyd = (() => {
   const clean = (v, n = TXT) => String(v ?? "").slice(0, n);
   const pick = (arr, allowed) => Array.isArray(arr) ? arr.filter(x => allowed.includes(x)) : [];
 
-  function valid(e) { return e && typeof e === "object" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && typeof e.id === "string"; }
+  const realDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); if (!m) return false; const t = new Date(+m[1], +m[2] - 1, +m[3]); return dateKey(t) === d; };
+  function valid(e) { return e && typeof e === "object" && realDate(e.date) && typeof e.id === "string"; }
   function load(arr) {
     return Array.isArray(arr) ? arr.filter(valid).slice(0, MAX).map(e => ({
       id: e.id, date: e.date, sytuacja: clean(e.sytuacja), cialo: pick(e.cialo, WSTYD_CIALO), cialoInne: clean(e.cialoInne, 200),
@@ -50,7 +51,8 @@ const Wstyd = (() => {
 
   function save() {
     const date = $("wstyd-date").value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showToast("Wybierz datę.", "error"); return; }
+    if (!realDate(date)) { showToast("Wybierz datę.", "error"); return; }
+    if (date > todayKey()) { showToast("Data nie może być z przyszłości.", "error"); return; }
     const e = { date, sytuacja: clean($("wstyd-sytuacja").value.trim()), cialo: chosen("wstyd-cialo"), cialoInne: clean($("wstyd-cialo-inne").value.trim(), 200),
       odmiany: chosen("wstyd-odmiany"), wyrazenie: clean($("wstyd-wyrazenie").value.trim()) };
     if (!e.sytuacja && !e.wyrazenie && !e.cialo.length && !e.cialoInne) { showToast("Wpisz choć jedno: sytuację, objawy w ciele albo jak to wyraziłeś.", "error"); return; }
@@ -60,7 +62,7 @@ const Wstyd = (() => {
       if (before.length >= MAX) { showToast(`Limit ${MAX} wpisów — usuń starsze.`, "error"); return; }
       AppState.wstyd = [{ id: uid(), at: new Date().toISOString(), ...e }, ...before];
     }
-    if (!Storage.save()) { AppState.wstyd = before; return; }   // nieudany zapis — nic nie udajemy
+    if (!Storage.saveWstyd()) { AppState.wstyd = before; return; }   // nieudany zapis — nic nie udajemy
     showToast(editId ? "Wpis poprawiony ✓" : "Zapisane ✓");
     editId = null; fillForm(null); render();
   }
@@ -75,12 +77,12 @@ const Wstyd = (() => {
   // „Usuń” — drugie dotknięcie w 4 s potwierdza (bez okienek)
   function askDelete(id, btn) {
     if (armedDelete !== id) {
-      armedDelete = id; clearTimeout(armTimer); btn.textContent = "Na pewno usunąć?"; btn.classList.add("is-armed");
+      armedDelete = id; clearTimeout(armTimer); render();
       armTimer = setTimeout(() => { armedDelete = null; render(); }, 4000); return;
     }
     clearTimeout(armTimer); armedDelete = null;
     const before = list(); AppState.wstyd = before.filter(x => x.id !== id);
-    if (!Storage.save()) { AppState.wstyd = before; return; }
+    if (!Storage.saveWstyd()) { AppState.wstyd = before; return; }
     if (editId === id) { editId = null; fillForm(null); }
     showToast("Wpis usunięty"); render();
   }
@@ -113,7 +115,7 @@ const Wstyd = (() => {
       const act = document.createElement("div"); act.className = "wstyd-entry-actions";
       const ed = document.createElement("button"); ed.type = "button"; ed.className = "btn btn-ghost"; ed.textContent = "Edytuj";
       ed.addEventListener("click", () => startEdit(e.id));
-      const del = document.createElement("button"); del.type = "button"; del.className = "btn btn-ghost wstyd-del"; del.textContent = armedDelete === e.id ? "Na pewno usunąć?" : "Usuń";
+      const del = document.createElement("button"); del.type = "button"; del.className = "btn btn-ghost wstyd-del"; del.textContent = armedDelete === e.id ? "Na pewno usunąć?" : "Usuń"; if (armedDelete === e.id) del.classList.add("is-armed");
       del.addEventListener("click", () => askDelete(e.id, del));
       act.append(ed, del); c.appendChild(act); box.appendChild(c);
     });
@@ -152,8 +154,19 @@ const Wstyd = (() => {
     $("wstyd-btn-copy").addEventListener("click", copy);
     fillForm(null);
   }
-  function open() { if (!built) { build(); built = true; } if (!editId) $("wstyd-date").value ||= todayKey(); render(); }
+  function open() {
+    if (!built) { build(); built = true; }
+    $("wstyd-date").max = todayKey();
+    if (!editId && !$("wstyd-sytuacja").value && !$("wstyd-wyrazenie").value) $("wstyd-date").value = todayKey();
+    render();
+  }
   // wylogowanie / „Usuń dane”: formularz i lista czyste, nic z poprzedniego konta
   function reset() { AppState.wstyd = []; editId = null; armedDelete = null; clearTimeout(armTimer); if (built) { fillForm(null); render(); } }
+  window.addEventListener("storage", e => {
+    if (!AppState.user || e.key !== Storage.wstydKey()) return;
+    AppState.wstyd = load(Storage.loadWstyd([]));
+    if (editId && !list().some(x => x.id === editId)) { editId = null; fillForm(null); }
+    if (built) render();
+  });
   return { load, open, reset, text };
 })();
