@@ -12,7 +12,7 @@
 :root[data-theme="dark"] .k-strach{--k-txt:#fcd34d}
 
 .kolo-main{width:min(560px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.kolo-main[hidden],#view-dziennik[hidden],#view-wstyd[hidden]{display:none!important}
+.kolo-main[hidden],#view-dziennik[hidden],#view-wstyd[hidden],.btn[hidden]{display:none!important}
 .kolo-intro{padding:16px 18px}
 .kolo-intro h1{margin:0 0 4px;font-size:1.35rem;letter-spacing:-.02em;color:var(--t-fg)}
 .kolo-intro p{margin:0;color:var(--t-fg2);font-size:.95rem;line-height:1.45}
@@ -90,6 +90,7 @@ input.wstyd-field#wstyd-cialo-inne{margin-top:8px}
 .wstyd-line{margin:6px 0 4px;color:var(--t-fg2);font-size:1rem;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
 .wstyd-line strong{color:var(--t-fg)}
 .wstyd-tags{display:flex;flex-wrap:wrap;gap:6px}
+#view-wstyd .kolo-chip{overflow-wrap:anywhere;max-width:100%;white-space:normal}
 .wstyd-entry-actions{display:flex;gap:8px;margin-top:10px}
 .wstyd-entry-actions .btn{min-height:44px;flex:1}
 .wstyd-del.is-armed{color:var(--t-bad);border-color:var(--t-bad)}

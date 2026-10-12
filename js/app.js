@@ -1,6 +1,6 @@
 const App={
  async onLogin(){
-  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};AppState.kolo=Kolo.load(saved.kolo);AppState.wstyd=Wstyd.load(saved.wstyd);UI.init();Views.onLogin();
+  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};AppState.kolo=Kolo.load(saved.kolo);AppState.wstyd=Wstyd.load(Storage.loadWstyd(saved.wstyd));Storage.migrateWstyd();UI.init();Views.onLogin();
  },
  onLogout(){UI.reset();Views.onLogout();},
  persist(){Storage.save();Calendar.render();Statistics.render();}

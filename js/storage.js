@@ -2,8 +2,14 @@ const Storage = {
   box(){ return AppState.user?.guest ? sessionStorage : localStorage; },
   key(){ return AppState.user?.guest ? CONFIG.guestStorageKey : (AppState.user ? CONFIG.storagePrefix + AppState.user.sub : null); },
   load(){ try { return JSON.parse(this.box().getItem(this.key()) || '{"days":{},"quotes":{}}'); } catch { return {days:{},quotes:{}}; } },
-  save(){ try { this.box().setItem(this.key(), JSON.stringify({schemaVersion:CONFIG.schemaVersion,days:AppState.days,quotes:AppState.quotes,kolo:AppState.kolo,wstyd:AppState.wstyd})); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
-  clear(){ this.box().removeItem(this.key()); },
+  save(){ try { this.box().setItem(this.key(), JSON.stringify({schemaVersion:CONFIG.schemaVersion,days:AppState.days,quotes:AppState.quotes,kolo:AppState.kolo})); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
+  // Dzienniczek wstydu: osobny klucz (5.5.1) — zapis wpisów dnia/koła (także ze starej karty) go nie kasuje
+  wstydKey(){ const k=this.key(); return k ? k + "_wstyd" : null; },
+  loadWstyd(legacy){ try { const raw=this.box().getItem(this.wstydKey()); if(raw!==null) return JSON.parse(raw); } catch {} return legacy||[]; },
+  saveWstyd(){ try { this.box().setItem(this.wstydKey(), JSON.stringify(AppState.wstyd)); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
+  // 5.5.0 trzymał wpisy w rekordzie głównym — przenieś je pod osobny klucz od razu, zanim zapis reszty je pominie
+  migrateWstyd(){ try { if(this.box().getItem(this.wstydKey())===null && AppState.wstyd.length) this.saveWstyd(); } catch {} },
+  clear(){ this.box().removeItem(this.key()); try { this.box().removeItem(this.wstydKey()); } catch {} },
   // Format v3 zapisywał klucz dnia jako toISOString() północy czasu lokalnego (w Polsce = dzień wcześniej).
   v3Key(d){ return d.toISOString().slice(0,10); },
   // Odtwarza lokalną datę, z której wyliczono klucz v3 w BIEŻĄCEJ strefie czasowej (nie przesuwa kluczy, które już są poprawne).
