@@ -2,7 +2,7 @@ const Storage = {
   box(){ return AppState.user?.guest ? sessionStorage : localStorage; },
   key(){ return AppState.user?.guest ? CONFIG.guestStorageKey : (AppState.user ? CONFIG.storagePrefix + AppState.user.sub : null); },
   load(){ try { return JSON.parse(this.box().getItem(this.key()) || '{"days":{},"quotes":{}}'); } catch { return {days:{},quotes:{}}; } },
-  save(){ try { this.box().setItem(this.key(), JSON.stringify({schemaVersion:CONFIG.schemaVersion,days:AppState.days,quotes:AppState.quotes})); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
+  save(){ try { this.box().setItem(this.key(), JSON.stringify({schemaVersion:CONFIG.schemaVersion,days:AppState.days,quotes:AppState.quotes,kolo:AppState.kolo})); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
   clear(){ this.box().removeItem(this.key()); },
   // Format v3 zapisywał klucz dnia jako toISOString() północy czasu lokalnego (w Polsce = dzień wcześniej).
   v3Key(d){ return d.toISOString().slice(0,10); },
