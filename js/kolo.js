@@ -67,17 +67,22 @@ const Kolo = (() => {
     renderWords();
   }
 
+  // klucz przycisku z fokusem — po przebudowie listy fokus wraca na ten sam przycisk (klawiatura / czytnik ekranu)
+  const focusedKey = () => document.activeElement?.dataset?.koloKey || null;
+  function refocus(key) { if (key) document.querySelector(`[data-kolo-key="${CSS.escape(key)}"]`)?.focus(); }
   function renderWords() {
-    const c = cat(active), box = $("kolo-words");
+    const c = cat(active), box = $("kolo-words"), fk = focusedKey();
     box.replaceChildren();
     [MAIN, ...c.words].forEach(w => {
       const key = `${c.id}|${w}`, b = document.createElement("button");
       b.type = "button"; b.className = "kolo-word" + (w === MAIN ? " kolo-word--main" : "");
       b.textContent = w === MAIN ? `${c.label.toUpperCase()} — ogólnie` : w;
       b.setAttribute("aria-pressed", String(sel().includes(key)));
+      b.dataset.koloKey = key;
       b.addEventListener("click", () => toggle(key));
       box.appendChild(b);
     });
+    refocus(fk);
   }
 
   function persist() { Storage.save(); }
@@ -88,7 +93,7 @@ const Kolo = (() => {
   }
 
   function renderSelected() {
-    const box = $("kolo-selected"), n = sel().length;
+    const box = $("kolo-selected"), n = sel().length, fk = focusedKey();
     box.replaceChildren();
     $("kolo-selected-count").textContent = String(n);
     $("kolo-btn-note").disabled = $("kolo-btn-copy").disabled = n === 0;
@@ -107,9 +112,11 @@ const Kolo = (() => {
       t.className = `kolo-tag k-${key.split("|")[0]}`; dot.className = "kolo-dot"; dot.setAttribute("aria-hidden", "true");
       name.textContent = nameOf(key);
       x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", `Odznacz: ${nameOf(key)}`);
+      x.dataset.koloKey = "x|" + key;
       x.addEventListener("click", () => toggle(key));
       t.append(dot, name, x); box.appendChild(t);
     });
+    if (fk && fk.startsWith("x|") && !sel().includes(fk.slice(2))) $("kolo-btn-reset").focus(); else refocus(fk);
   }
 
   // „ZŁOŚĆ, LEKCEWAŻENIE” → „złość, lekceważenie” (grupami, w kolejności koła)
@@ -120,6 +127,7 @@ const Kolo = (() => {
 
   function addToToday() {
     const key = todayKey(), day = AppState.days[key] || blankDay(), add = line();
+    if ((day.note || "").split("\n").includes(add)) { showToast("Ta lista jest już w dzisiejszym wpisie."); return; }
     const note = day.note?.trim() ? `${day.note.trimEnd()}\n${add}` : add;
     if (note.length > NOTE_MAX) { showToast(`Notatka dnia ma limit ${NOTE_MAX} znaków — skróć listę albo notatkę.`, "error"); return; }
     day.note = note; AppState.days[key] = day;
@@ -149,11 +157,13 @@ const Kolo = (() => {
   }
 
   function load(list) { return Array.isArray(list) ? list.filter(valid) : []; }
+  // wylogowanie / „Usuń dane”: nic z poprzedniego konta nie może wrócić przez „Cofnij”
+  function reset() { undoSel = null; clearTimeout(undoTimer); AppState.kolo = []; if (built) { $("kolo-btn-reset").textContent = "Wyczyść"; show(active); renderSelected(); } }
   function open() {                       // wołane przy wejściu na zakładkę i po zalogowaniu
     if (!built) { buildWheel(); built = true; }
     show(active); renderSelected();
   }
-  return { load, open, line, get selected() { return [...sel()]; } };
+  return { load, open, reset, line, get selected() { return [...sel()]; } };
 })();
 
 // Dolne menu: Dzienniczek | Koło. Zakładka pamiętana w przeglądarce (wygoda), adres #kolo otwiera Koło od razu.
@@ -167,10 +177,13 @@ const Views = (() => {
     document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
     if (kolo) Kolo.open();
     if (remember) write(tab);
+    const hash = kolo ? "#kolo" : "";
+    if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
     window.scrollTo({ top: 0 });
   }
   function onLogin() { $("bottom-nav").hidden = false; go(location.hash === "#kolo" ? "kolo" : (read() === "kolo" ? "kolo" : "dziennik"), false); }
-  function onLogout() { $("bottom-nav").hidden = true; $("view-dziennik").hidden = false; $("view-kolo").hidden = true; }
+  function onLogout() { Kolo.reset(); $("bottom-nav").hidden = true; $("view-dziennik").hidden = false; $("view-kolo").hidden = true; }
   document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.addEventListener("click", () => go(b.dataset.tab))));
+  window.addEventListener("hashchange", () => { if (!$("bottom-nav").hidden) go(location.hash === "#kolo" ? "kolo" : "dziennik"); });
   return { go, onLogin, onLogout };
 })();
