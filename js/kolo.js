@@ -166,24 +166,27 @@ const Kolo = (() => {
   return { load, open, reset, line, get selected() { return [...sel()]; } };
 })();
 
-// Dolne menu: Dzienniczek | Koło. Zakładka pamiętana w przeglądarce (wygoda), adres #kolo otwiera Koło od razu.
+// Dolne menu: Dzienniczek | Koło | Wstyd. Zakładka pamiętana w przeglądarce (wygoda), adres #kolo / #wstyd otwiera ją od razu.
 const Views = (() => {
   const KEY = "dzienniczek_ui_tab_v1", $ = id => document.getElementById(id);
   const read = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
   const write = v => { try { localStorage.setItem(KEY, v); } catch (e) { /* tryb prywatny */ } };
+  const TABS = ["dziennik", "kolo", "wstyd"];
+  const fromHash = () => (location.hash === "#kolo" ? "kolo" : location.hash === "#wstyd" ? "wstyd" : null);
   function go(tab, remember = true) {
-    const kolo = tab === "kolo";
-    $("view-dziennik").hidden = kolo; $("view-kolo").hidden = !kolo;
+    if (!TABS.includes(tab)) tab = "dziennik";
+    TABS.forEach(t => { $(`view-${t}`).hidden = t !== tab; });
     document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
-    if (kolo) Kolo.open();
+    if (tab === "kolo") Kolo.open();
+    if (tab === "wstyd") Wstyd.open();
     if (remember) write(tab);
-    const hash = kolo ? "#kolo" : "";
+    const hash = tab === "dziennik" ? "" : `#${tab}`;
     if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
     window.scrollTo({ top: 0 });
   }
-  function onLogin() { $("bottom-nav").hidden = false; go(location.hash === "#kolo" ? "kolo" : (read() === "kolo" ? "kolo" : "dziennik"), false); }
-  function onLogout() { Kolo.reset(); $("bottom-nav").hidden = true; $("view-dziennik").hidden = false; $("view-kolo").hidden = true; }
+  function onLogin() { $("bottom-nav").hidden = false; go(fromHash() || read() || "dziennik", false); }
+  function onLogout() { Kolo.reset(); Wstyd.reset(); $("bottom-nav").hidden = true; $("view-dziennik").hidden = false; $("view-kolo").hidden = true; $("view-wstyd").hidden = true; }
   document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.addEventListener("click", () => go(b.dataset.tab))));
-  window.addEventListener("hashchange", () => { if (!$("bottom-nav").hidden) go(location.hash === "#kolo" ? "kolo" : "dziennik"); });
+  window.addEventListener("hashchange", () => { if (!$("bottom-nav").hidden) go(fromHash() || "dziennik"); });
   return { go, onLogin, onLogout };
 })();
