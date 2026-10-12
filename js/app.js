@@ -1,6 +1,6 @@
 const App={
  async onLogin(){
-  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};AppState.kolo=Kolo.load(saved.kolo);UI.init();Views.onLogin();
+  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};AppState.kolo=Kolo.load(saved.kolo);AppState.wstyd=Wstyd.load(saved.wstyd);UI.init();Views.onLogin();
  },
  onLogout(){UI.reset();Views.onLogout();},
  persist(){Storage.save();Calendar.render();Statistics.render();}
@@ -12,7 +12,7 @@ const UI={
 document.addEventListener("DOMContentLoaded",()=>{
  Auth.init();
  document.getElementById("btn-demo-login")?.addEventListener("click",()=>Auth.demo());document.getElementById("btn-logout")?.addEventListener("click",()=>Auth.logout());
- document.getElementById("btn-clear-data")?.addEventListener("click",()=>{if(confirm("Czy na pewno chcesz usunąć wszystkie zapisane wpisy dla tego konta?")){Storage.clear();AppState.days={};Kolo.reset();Calendar.render();Statistics.render();showToast("Wpisy zostały usunięte");}});
+ document.getElementById("btn-clear-data")?.addEventListener("click",()=>{if(confirm("Czy na pewno chcesz usunąć wszystkie zapisane wpisy dla tego konta?")){Storage.clear();AppState.days={};Kolo.reset();Wstyd.reset();Calendar.render();Statistics.render();showToast("Wpisy zostały usunięte");}});
  document.getElementById("btn-refresh-quote")?.addEventListener("click",()=>Quotes.random());
  const panel=document.getElementById("add-quote-panel"),input=document.getElementById("quote-input");document.getElementById("btn-add-quote-toggle")?.addEventListener("click",()=>{panel.hidden=!panel.hidden;if(!panel.hidden)input.focus();});input?.addEventListener("input",()=>document.getElementById("quote-char-count").textContent=`${input.value.length} / 200`);document.getElementById("btn-save-quote")?.addEventListener("click",()=>{Quotes.save(input.value);input.value="";document.getElementById("quote-char-count").textContent="0 / 200";panel.hidden=true;showToast("Cytat dodany ✓");});
  document.getElementById("btn-prev-month")?.addEventListener("click",()=>Calendar.prev());document.getElementById("btn-next-month")?.addEventListener("click",()=>Calendar.next());document.getElementById("btn-month-view")?.addEventListener("click",()=>MonthView.open());document.getElementById("btn-close-month")?.addEventListener("click",()=>MonthView.close());document.getElementById("btn-print-month")?.addEventListener("click",()=>MonthView.print());

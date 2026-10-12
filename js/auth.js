@@ -20,7 +20,7 @@ const Auth = {
     }catch(e){console.error("Błąd profilu Google",e);showToast("Nie udało się odczytać profilu Google.","error");}
   },
   demo(){AppState.user={name:"Użytkownik gość",email:"",avatar:null,sub:"guest_session",guest:true};this.render();App.onLogin();},
-  logout(){AppState.user=null;AppState.days={};AppState.quotes={};AppState.kolo=[];this.render();App.onLogout();},
+  logout(){AppState.user=null;AppState.days={};AppState.quotes={};AppState.kolo=[];AppState.wstyd=[];this.render();App.onLogout();},
   render(){
     const u=AppState.user;
     document.getElementById("auth-login-view").style.display=u?"none":"flex";
