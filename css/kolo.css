@@ -1,0 +1,74 @@
+/* Koło uczuć (zakładka dzienniczka, Bartek 12.10.2026) — kolory grup (--k = barwa wycinka, --k-txt = czytelny tekst na panelu, osobno jasny/ciemny).
+   Wszystko inne ze zmiennych --t-* (css/base.css), jak w dzienniczku i TERAPII. */
+.k-wstyd{--k:#a855f7;--k-txt:#7e22ce}
+.k-gniew{--k:#ef4444;--k-txt:#b91c1c}
+.k-smutek{--k:#3b82f6;--k-txt:#1d4ed8}
+.k-radosc{--k:#10b981;--k-txt:#047857}
+.k-strach{--k:#f59e0b;--k-txt:#b45309}
+:root[data-theme="dark"] .k-wstyd{--k-txt:#d8b4fe}
+:root[data-theme="dark"] .k-gniew{--k-txt:#fca5a5}
+:root[data-theme="dark"] .k-smutek{--k-txt:#93c5fd}
+:root[data-theme="dark"] .k-radosc{--k-txt:#6ee7b7}
+:root[data-theme="dark"] .k-strach{--k-txt:#fcd34d}
+
+.kolo-main{width:min(560px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.kolo-intro{padding:16px 18px}
+.kolo-intro h1{margin:0 0 4px;font-size:1.35rem;letter-spacing:-.02em;color:var(--t-fg)}
+.kolo-intro p{margin:0;color:var(--t-fg2);font-size:.95rem;line-height:1.45}
+
+/* ---------- koło ---------- */
+.kolo-wheel-wrap{width:min(100%,430px);margin:0 auto;aspect-ratio:1}
+.kolo-wheel{width:100%;height:100%;display:block;filter:drop-shadow(var(--t-shadow));overflow:visible;-webkit-user-select:none;user-select:none}
+.kolo-ring{fill:var(--t-panel);stroke:var(--t-line);stroke-width:2}
+.kolo-hub{fill:var(--t-panel-solid);stroke:var(--t-line);stroke-width:3}
+.kolo-hub-small{font-size:13px;font-weight:800;letter-spacing:3px;fill:var(--t-mut)}
+.kolo-hub-big{font-size:16px;font-weight:800;letter-spacing:2px;fill:var(--t-fg)}
+.kolo-slice{cursor:pointer;outline:none;transform-origin:250px 250px;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.kolo-slice path{fill:var(--k);fill-opacity:.2;stroke:var(--k);stroke-width:2;stroke-opacity:.75;transition:fill-opacity .2s,stroke-width .2s}
+.kolo-slice:hover path{fill-opacity:.3}
+.kolo-slice.is-active{transform:scale(1.045)}
+.kolo-slice.is-active path{fill-opacity:.42;stroke-width:3.5;filter:drop-shadow(0 0 14px var(--k))}
+.kolo-slice:focus-visible path{stroke:var(--t-acc);stroke-width:4}
+.kolo-label{fill:var(--t-fg);font-size:17px;font-weight:800;letter-spacing:1.5px;pointer-events:none}
+.kolo-sub{fill:var(--k-txt);font-size:15px;font-weight:700;pointer-events:none}
+.kolo-badge circle{fill:var(--t-acc)}
+.kolo-badge text{fill:var(--t-on-acc);font-size:13px;font-weight:800;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.kolo-slice{transition:none}}
+
+/* ---------- panele ---------- */
+.kolo-panel{padding:14px 16px 16px}
+.kolo-panel-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--t-line)}
+.kolo-panel-head h2{margin:0;font-size:1.1rem;font-weight:800;color:var(--t-fg);flex:1 1 auto;min-width:0}
+#kolo-inspector .kolo-panel-head h2{color:var(--k-txt);text-transform:uppercase;letter-spacing:.06em}
+.kolo-dot{width:14px;height:14px;border-radius:50%;background:var(--k);box-shadow:0 0 10px var(--k);flex:0 0 auto}
+.kolo-chip{flex:0 0 auto;font-size:.8rem;font-weight:700;color:var(--t-fg2);background:var(--t-surf2);border-radius:999px;padding:3px 10px}
+.kolo-words,.kolo-selected{display:flex;flex-wrap:wrap;gap:8px}
+.kolo-word{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--t-line);background:var(--t-surf);color:var(--t-fg);font-weight:600;font-size:.88rem;letter-spacing:.01em;text-align:left;transition:background .15s,border-color .15s,transform .1s}
+.kolo-word:hover{border-color:var(--k)}
+.kolo-word:active{transform:scale(.96)}
+.kolo-word[aria-pressed="true"]{background:var(--t-acc);border-color:var(--t-acc);color:var(--t-on-acc)}
+.kolo-word[aria-pressed="true"]::after{content:"✓";font-weight:800}
+.kolo-word--main{border-style:dashed;border-color:var(--k)}
+.kolo-tag{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 2px 0 12px;border-radius:999px;border:1px solid var(--t-line);background:var(--t-surf);color:var(--t-fg);font-size:.88rem;font-weight:600}
+.kolo-tag .kolo-dot{width:10px;height:10px;box-shadow:none}
+.kolo-tag button{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--t-mut);font-size:1.15rem;line-height:1}
+.kolo-tag button:hover{background:var(--t-surf2);color:var(--t-bad)}
+.kolo-empty{color:var(--t-mut);font-size:.9rem;margin:0}
+.kolo-actions{display:flex;gap:8px;margin-top:14px}
+.kolo-actions .btn{flex:1;min-height:44px}
+.kolo-actions .btn:disabled{opacity:.45;cursor:default}
+.kolo-note{margin:10px 0 0;font-size:.8rem;color:var(--t-mut2)}
+.kolo-actions{flex-wrap:wrap}.kolo-actions .btn-primary{flex-basis:100%}
+@media(max-width:1023px){.kolo-word,.kolo-tag,.kolo-chip,.kolo-note,.kolo-intro p{font-size:.9rem}}
+
+/* ---------- dolne menu: Dzienniczek | Koło (jak w TERAPII — strefa kciuka) ---------- */
+.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom));z-index:60;display:flex;gap:4px;padding:5px;
+  background:var(--t-head);-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4);border:1px solid var(--t-line);border-radius:999px;box-shadow:var(--t-shadow-head)}
+.bottom-nav[hidden]{display:none}
+.bottom-nav button{display:inline-flex;align-items:center;gap:7px;min-height:48px;min-width:128px;justify-content:center;padding:0 16px;white-space:nowrap;border:0;border-radius:999px;background:transparent;color:var(--t-fg2);font-weight:700;font-size:.9rem}
+.bottom-nav button svg{width:20px;height:20px;flex:0 0 auto}
+.bottom-nav button[aria-current="page"]{background:var(--t-acc);color:var(--t-on-acc)}
+body:has(#bottom-nav:not([hidden])){padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+body:has(#bottom-nav:not([hidden])) .update-bar{bottom:calc(76px + env(safe-area-inset-bottom))}
+body:has(#bottom-nav:not([hidden])) .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+@media print{.bottom-nav,#view-kolo{display:none!important}}

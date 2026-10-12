@@ -1,8 +1,8 @@
 const App={
  async onLogin(){
-  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};UI.init();
+  if(!AppState.user)return;Storage.migrateOldLocalDates();const saved=Storage.load();AppState.days=saved.days||{};AppState.quotes=saved.quotes||{};AppState.kolo=Kolo.load(saved.kolo);UI.init();Views.onLogin();
  },
- onLogout(){UI.reset();},
+ onLogout(){UI.reset();Views.onLogout();},
  persist(){Storage.save();Calendar.render();Statistics.render();}
 };
 const UI={
