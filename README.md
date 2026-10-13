@@ -2,6 +2,32 @@
 
 Wersja przygotowana na bazie pełniejszego repo `CONSIS-redroad/dzienniczek`, z zachowaniem jego funkcji PWA, 25 cytatów, kalendarza, widoku miesięcznego 27 × dni i wydruku A4 poziomo. Z nowszej wersji modularnej przeniesiono podział kodu, tryb gościa i lokalne obliczanie dat.
 
+## Stan na 13.10.2026 — wersja 5.5.1 (na żywo)
+
+- Adres: https://consis-redroad.github.io/dzienniczek/ (sprawdzenie wersji: `js/version.js`).
+- Dolne menu — trzy zakładki: **Dziennik** (27 objawów × dni, notatka, widok miesiąca, wydruk), **Koło** (koło uczuć, `js/kolo.js`),
+  **Wstyd** („Dzienniczek wstydu”, `js/wstyd.js`: data, sytuacja, 9 odmian wstydu, 13 objawów w ciele + własny dopisek,
+  jak się wyraził; podsumowanie „Najczęściej w ciele”, „Kopiuj wszystko”). Adres `#kolo` / `#wstyd` otwiera zakładkę.
+- Wpisy wstydu leżą pod OSOBNYM kluczem `<klucz użytkownika>_wstyd` (od 5.5.1) — zapis dnia/koła, także ze starej
+  karty, ich nie nadpisuje; wpisy z 5.5.0 (w rekordzie głównym) przenoszą się same; druga karta odświeża listę (zdarzenie `storage`).
+- Testy telefonu (Playwright, 320/390 px, jasny/ciemny, `service_workers='block'`, `has_touch=True`): skrypty w oknie AI
+  (`test_dz_wstyd*.py`) — sprawdzają m.in. ukryty „Anuluj edycję” przy nowym wpisie i to, że stara karta nie kasuje wstydu.
+- Każda zmiana na żywo dopiero po adwersarzu; wydanie = PR do `main` (Pages), podbicie `js/version.js` i listy `SHELL` w `sw.js`.
+
+## Plan poprawek
+
+1. **Dane przy koncie, nie przy urządzeniu (D034 w repo terapia; prowadzący 13.10).** Dziś wszystko leży w pamięci przeglądarki
+   (`localStorage`) — telefon i komputer mają osobne dzienniczki, wyczyszczenie przeglądarki kasuje wpisy. Cel: zapis na
+   **Dysku Google użytkownika, w ukrytym folderze aplikacji** (`appDataFolder`, uprawnienie `drive.appdata` — aplikacja nie widzi
+   innych plików, my nie mamy dostępu do danych, nic na naszym serwerze). Kroki:
+   a) klient Google: dopisać uprawnienie `drive.appdata` (ekran zgody), logowanie GIS + token dostępu (`google.accounts.oauth2`);
+   b) zapis/odczyt jednego pliku JSON na konto (dni, koło, wstyd), `localStorage` zostaje jako zapas offline, synchronizacja po powrocie sieci,
+      konflikt = nowszy zapis per dzień / per wpis;
+   c) migracja: przy pierwszym logowaniu po zmianie wpisy z urządzenia dokładane do pliku na Dysku (scalanie, nic nie ginie);
+   d) gość bez zmian (`sessionStorage`); test na dwóch „urządzeniach” (dwa konteksty przeglądarki) + adwersarz przed wydaniem.
+   Status: **czeka na „robić” prowadzącego.**
+2. Audyt bezpieczeństwa (karta 00b345f1): wspólny adres `consis-redroad.github.io` z TERAPIĄ = wspólny `localStorage`.
+
 ## Siostrzana aplikacja — TERAPIA (grupa)
 
 Dzienniczek jest **prywatny i osobny** — dane zostają w przeglądarce użytkownika, grupa ich nie widzi.
@@ -59,7 +85,7 @@ js/
 
 ## Dane i logowanie
 
-Dane zalogowanego użytkownika pozostają w `localStorage` pod kluczem `dzienniczek_user_<sub>`. Gość używa `sessionStorage`.
+Dane zalogowanego użytkownika pozostają w `localStorage` **tego urządzenia** pod kluczem `dzienniczek_user_<sub>` (dni, cytaty, koło) i `dzienniczek_user_<sub>_wstyd` (dzienniczek wstydu). Konto Google służy tylko do rozpoznania osoby — danych na koncie ani na żadnym serwerze nie ma (zmiana w „Plan poprawek”). Gość używa `sessionStorage`.
 
 Google Identity Services dostarcza poświadczenie, którego payload jest odczytywany w przeglądarce w celu identyfikacji profilu. **Ta aplikacja nie posiada backendu i nie wykonuje serwerowej weryfikacji podpisu tokenu.** Nie należy traktować jej jako pełnego systemu bezpiecznego uwierzytelniania danych medycznych/terapeutycznych.
 

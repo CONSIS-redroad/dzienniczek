@@ -84,6 +84,10 @@ Modularność przez natywne moduły ES (`<script type="module" src="js/app.js">`
 
 Dokładnie 27 wartości `symptoms`. Dane użytkownika Google są pod kluczem `dzienniczek_user_<sub>`. Nie zmieniaj formatu danych bez migracji.
 
+Od 5.4 rekord główny ma też `kolo` (koło uczuć, `js/kolo.js`); od 5.5.1 **dzienniczek wstydu** leży OSOBNO pod `dzienniczek_user_<sub>_wstyd`
+(lista wpisów `{id, date, sytuacja, odmiany[], cialo[], cialoInne, wyrazenie, at}`, max 500, tekst ≤ 1000 znaków) — `Storage.saveWstyd()`,
+migracja z rekordu głównego (5.5.0) w `Storage.migrateWstyd()`. Wszystko jest na urządzeniu; plan przeniesienia na Dysk Google użytkownika: README § Plan poprawek.
+
 ## 6. Daty — krytyczne
 
 Nigdy nie używaj `new Date().toISOString().slice(0, 10)` do określania dnia użytkownika. Klucz dnia budujemy z lokalnych `getFullYear()`, `getMonth()`, `getDate()`. Przykład: 2 października 2026 → `2026-10-02`, nigdy `2026-10-01`.
