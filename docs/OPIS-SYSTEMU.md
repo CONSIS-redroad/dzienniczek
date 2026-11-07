@@ -86,7 +86,8 @@ Dokładnie 27 wartości `symptoms`. Dane użytkownika Google są pod kluczem `dz
 
 Od 5.4 rekord główny ma też `kolo` (koło uczuć, `js/kolo.js`); od 5.5.1 **dzienniczek wstydu** leży OSOBNO pod `dzienniczek_user_<sub>_wstyd`
 (lista wpisów `{id, date, sytuacja, odmiany[], cialo[], cialoInne, wyrazenie, at}`, max 500, tekst ≤ 1000 znaków) — `Storage.saveWstyd()`,
-migracja z rekordu głównego (5.5.0) w `Storage.migrateWstyd()`. Wszystko jest na urządzeniu; plan przeniesienia na Dysk Google użytkownika: README § Plan poprawek.
+migracja z rekordu głównego (5.5.0) w `Storage.migrateWstyd()`. Od 5.6.0 kwestionariusz przemocy emocjonalnej (zakładka „Pytania”, `js/przemoc.js`)
+leży pod `dzienniczek_user_<sub>_przemoc`: `{answers: {"<obszar>.<nr>": "c"|"r"|"n"}, history: [{date, at, answered, total, scores{obszar: pkt}}]}` (max 50, jeden wynik na dzień). Wszystko jest na urządzeniu; plan przeniesienia na Dysk Google użytkownika: README § Plan poprawek.
 
 ## 6. Daty — krytyczne
 
