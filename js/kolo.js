@@ -180,12 +180,12 @@ const Views = (() => {
     if (tab === "kolo") Kolo.open();
     if (tab === "wstyd") Wstyd.open();
     if (tab === "pytania") Przemoc.open();
-    if (remember) write(tab);
+    if (remember) write(tab === "pytania" ? "dziennik" : tab);   // Pytań nie przywracamy następnej osobie (klucz wspólny dla kont)
     const hash = tab === "dziennik" ? "" : `#${tab}`;
     if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
     window.scrollTo({ top: 0 });
   }
-  function onLogin() { $("bottom-nav").hidden = false; go(fromHash() || read() || "dziennik", false); }
+  function onLogin() { $("bottom-nav").hidden = false; const r = read(); go(fromHash() || (r === "pytania" ? null : r) || "dziennik", false); }
   function onLogout() { Kolo.reset(); Wstyd.reset(); Przemoc.reset(); $("bottom-nav").hidden = true; TABS.forEach(t => { $(`view-${t}`).hidden = t !== "dziennik"; }); }
   document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.addEventListener("click", () => go(b.dataset.tab))));
   window.addEventListener("hashchange", () => { if (!$("bottom-nav").hidden) go(fromHash() || "dziennik"); });

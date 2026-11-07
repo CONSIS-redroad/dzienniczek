@@ -14,13 +14,13 @@ const PRZEMOC = [
       "Czy o wiele mniej kontaktujesz się z rodziną i znajomymi, odkąd jesteś w tym związku?",
       "Czy czujesz się niezręcznie, będąc jednocześnie z partnerem/ką i ze znajomymi?",
       "Czy czujesz zdenerwowanie lub obawę, co partner/ka powie lub zrobi, jeśli spóźnisz się kilka minut z pracy, zakupów albo od znajomych?"] }] },
-  { id: "uwaga", short: "Uwaga na partnerze", title: "Koncentracja uwagi na partnerze", desc: "Ciągłe skupienie na jego/jej potrzebach i nastrojach kosztem własnych.", parts: [
+  { id: "uwaga", short: "Skupienie na partnerze", title: "Koncentracja uwagi na partnerze", desc: "Ciągłe skupienie na jego/jej potrzebach i nastrojach kosztem własnych.", parts: [
     { q: [
       "Czy musisz mieć akceptację partnera/ki dla swoich ubrań, opinii, decyzji?",
       "Czy czujesz się przytłoczona/y przez partnera/kę, nawet gdy nie ma go/jej obok?",
       "Czy uważasz na to, co mówisz, albo w ogóle unikasz mówienia, żeby nie denerwować partnera/ki?",
       "Czy planujesz swoje zajęcia tak, żeby partner/ka nie zorientował/a się, co robisz?",
-      "Czy często masz poczucie, że musisz uważać na każdy swój ruch?"] }] },
+      "Czy masz poczucie, że musisz uważać na każdy swój ruch?"] }] },
   { id: "wyzszosc", short: "Wyższość", title: "Okazywanie wyższości", desc: "Przedstawianie siebie jako nieomylnego, wszechwiedzącego, mającego kontrolę.", parts: [
     { q: [
       "Czy Twój partner/ka twierdzi, że jest wyjątkowo bystry/a, ma nieprzeciętną wiedzę lub niezwykłe zdolności?",
@@ -49,7 +49,7 @@ const PRZEMOC = [
       "Czy Twój partner/ka namówił/a Cię do czegoś, a potem wypominał/a Ci to tak, że czułaś/eś winę lub wstyd?",
       "Czy Twój partner/ka trzyma Cię długo w nocy, wypytując o prawdziwe lub wymyślone romanse, w których jego/jej zdaniem brałaś/eś udział?",
       "Czy Twój partner/ka zmusza Cię do przepraszania za rzeczy, których nie zrobiłaś/eś?",
-      "Czy Twój partner/ka każe Ci prosić o pozwolenie na wydanie pieniędzy na dom lub swoje rzeczy — także z Twoich zarobków?",
+      "Czy Twój partner/ka każe Ci prosić o pozwolenie na wydanie pieniędzy na dom lub Twoje rzeczy — także z Twoich zarobków?",
       "Czy Twój partner/ka używa wobec Ciebie poniżających wyzwisk?",
       "Czy Twój partner/ka chwali się swoimi podbojami lub flirtuje z innymi przy Tobie?"] }] },
   { id: "grozby", short: "Groźby", title: "Groźby i zastraszanie", desc: "Groźby odejścia, szantaż emocjonalny, groźby finansowe, zastraszanie siłą.", parts: [
@@ -59,7 +59,7 @@ const PRZEMOC = [
       "Czy mówi, że zachoruje psychicznie lub odbierze sobie życie, jeśli odejdziesz lub przestaniesz go/ją kochać?",
       "Jeśli jest uzależniony/a, czy daje do zrozumienia, że znowu zacznie pić lub brać, jeśli nie spełnisz jego/jej oczekiwań?",
       "Czy grozi, że „da Ci nauczkę” albo Cię ukarze, jeśli będziesz „niegrzeczna/y”?",
-      "Czy grozi odebraniem pieniędzy, zablokowaniem konta w banku albo kluczyków do samochodu?",
+      "Czy grozi, że odbierze Ci pieniądze, karty, kluczyki do samochodu albo zablokuje Ci konto w banku?",
       "Czy głosem, miną lub postawą ciała straszy Cię, pokazując, że traci panowanie nad złością?",
       "Jeśli zostałaś/eś uderzona/y lub pobita/y — czy boisz się, że to się powtórzy, jeśli się sprzeciwisz?",
       "Czy Twój partner/ka trzyma „pod ręką” broń, nóż lub inne niebezpieczne narzędzia?"] }] },
@@ -98,13 +98,16 @@ const Przemoc = (() => {
   const ALL = KEYS.flat(), TOTAL = ALL.length, MAXPTS = TOTAL * 2, VAL = Object.fromEntries(PRZEMOC_ODP.map(o => [o[0], o[2]]));
   let built = false, armedClear = false, armTimer = 0;
   let st = { answers: {}, history: [] };
+  // dane z pamięci przeglądarki traktujemy jak obce: liczba całkowita w zakresie, data prawdziwa
+  const int = (v, max) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : 0; };
+  const realDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof d === "string" ? d : ""); return !!m && dateKey(new Date(+m[1], +m[2] - 1, +m[3])) === d; };
 
   function load(raw) {
     const a = {}, src = raw && typeof raw === "object" && raw.answers && typeof raw.answers === "object" ? raw.answers : {};
-    ALL.forEach(k => { if (src[k] in VAL) a[k] = src[k]; });
-    const h = Array.isArray(raw?.history) ? raw.history.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && x.scores && typeof x.scores === "object").slice(0, HIST)
-      .map(x => ({ date: x.date, at: String(x.at || ""), answered: +x.answered || 0, total: +x.total || 0,
-        scores: Object.fromEntries(PRZEMOC.map(s => [s.id, +x.scores[s.id] || 0])) })) : [];
+    ALL.forEach(k => { if (typeof src[k] === "string" && Object.hasOwn(VAL, src[k])) a[k] = src[k]; });
+    const h = Array.isArray(raw?.history) ? raw.history.filter(x => x && typeof x === "object" && realDate(x.date) && x.scores && typeof x.scores === "object").slice(0, HIST)
+      .map(x => { const scores = Object.fromEntries(PRZEMOC.map((s, i) => [s.id, int(x.scores[s.id], KEYS[i].length * 2)]));
+        return { date: x.date, at: String(x.at || "").slice(0, 40), answered: int(x.answered, TOTAL), total: Object.values(scores).reduce((a, b) => a + b, 0), scores }; }) : [];   // suma liczona z obszarów, nie brana z pamięci
     return { answers: a, history: h };
   }
   const key = () => { const k = Storage.key(); return k ? k + "_przemoc" : null; };
@@ -243,10 +246,10 @@ const Przemoc = (() => {
 
   function open() {
     if (!built) { build(); built = true; }
-    st = load(read()); syncInputs(); refresh();
+    disarm(); st = load(read()); syncInputs(); refresh();
   }
   // wylogowanie / „Wyczyść wpisy”: nic z poprzedniego konta na ekranie
   function reset() { st = { answers: {}, history: [] }; disarm(); if (built) { syncInputs(); refresh(); } }
   window.addEventListener("storage", e => { if (!AppState.user || !built || e.key !== key()) return; st = load(read()); syncInputs(); refresh(); });
-  return { open, reset, load, text, get total() { return TOTAL; } };
+  return { open, reset, load, text, score: () => score(), set: v => { st = load(v); }, get total() { return TOTAL; }, get max() { return MAXPTS; } };
 })();

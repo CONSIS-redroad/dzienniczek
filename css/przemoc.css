@@ -10,7 +10,7 @@
   .bottom-nav button svg{width:20px;height:20px}
   body:has(#bottom-nav:not([hidden])){padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 }
-@media(max-width:340px){.bottom-nav button{padding:4px 7px;font-size:.68rem}}
+@media(max-width:340px){.bottom-nav button{min-width:48px;padding:4px 6px;font-size:.68rem}}
 
 /* postęp i paski */
 .prz-progress-card{padding:14px 16px}
