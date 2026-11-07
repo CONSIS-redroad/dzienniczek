@@ -73,6 +73,8 @@ Modularność przez natywne moduły ES (`<script type="module" src="js/app.js">`
 
 ## 5. Model danych
 
+> **Pełny i aktualny opis wszystkich kluczy, formatów i zasad migracji: [`docs/DANE.md`](DANE.md).** Ten plik zmienia się w tym samym PR co kod zapisu.
+
 ```json
 {
   "YYYY-MM-DD": {

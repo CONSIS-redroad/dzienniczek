@@ -126,4 +126,4 @@ To jest aplikacja statyczna. Nie wymaga Node ani procesu build. Na GitHub Pages 
 
 Przed publikacją zalecane jest uruchomienie aplikacji w przeglądarce i sprawdzenie logowania Google, migracji danych, PWA/offline oraz wydruku A4.
 
-Opis systemu: [docs/OPIS-SYSTEMU.md](docs/OPIS-SYSTEMU.md)
+Opis systemu: [docs/OPIS-SYSTEMU.md](docs/OPIS-SYSTEMU.md) · **Struktura danych użytkownika i zasady zmian: [docs/DANE.md](docs/DANE.md)** (aktualizować w każdym PR, który zmienia zapis)

@@ -149,4 +149,16 @@ console.log('TZ =',process.env.TZ||'(domyślna)');
  for(const v of ['s','m','l'])ok(html.includes(`<button type="button" data-text="${v}"`),'przycisk wielkości '+v);
  ok(/const readText = \(\) => \(t => \(t === "s" \|\| t === "l"\) \? t : "m"\)/.test(th),'theme.js: nieznana wartość = średni');}
 
+// 12. docs/DANE.md opisuje KAŻDY klucz zapisu używany w kodzie (żeby przy zmianach dane się nie rozjechały)
+{const dane=fs.readFileSync(path.join(root,'docs','DANE.md'),'utf8');
+ const src=['index.html',...fs.readdirSync(path.join(root,'js')).map(f=>'js/'+f)].map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n');
+ const keys=new Set([...src.matchAll(/"((?:rr_ui|dzienniczek)_[a-z0-9_]+)"/g)].map(m=>m[1]));
+ for(const m of src.matchAll(/["`+]\s*"(_[a-z0-9]+)"|\+ "(_[a-z0-9]+)"|k \+ "(_[a-z0-9]+)"/g))keys.add(m[1]||m[2]||m[3]);
+ for(const k of ['_wstyd','_przemoc','_backup_v3_'])keys.add(k);
+ ok(keys.size>=12,'znaleziono klucze zapisu w kodzie ('+keys.size+')');
+ for(const k of keys)ok(dane.includes(k),'docs/DANE.md opisuje klucz '+k);
+ const clr=fs.readFileSync(path.join(root,'js','storage.js'),'utf8').match(/clear\(\)\{[^\n]*/)[0];
+ for(const k of ['wstydKey()','"_przemoc"'])ok(clr.includes(k),'Storage.clear usuwa '+k);
+ const sym=vm.runInContext('SYMPTOMS.length',mk());ok(sym===27&&/\*\*27\*\* wartości/.test(dane),'27 objawów = opis w DANE.md');}
+
 console.log('OK, asercji:',n);
