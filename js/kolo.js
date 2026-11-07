@@ -166,26 +166,27 @@ const Kolo = (() => {
   return { load, open, reset, line, get selected() { return [...sel()]; } };
 })();
 
-// Dolne menu: Dzienniczek | Koło | Wstyd. Zakładka pamiętana w przeglądarce (wygoda), adres #kolo / #wstyd otwiera ją od razu.
+// Dolne menu: Dzienniczek | Koło | Wstyd | Pytania. Zakładka pamiętana w przeglądarce (wygoda), adres #kolo / #wstyd / #pytania otwiera ją od razu.
 const Views = (() => {
   const KEY = "dzienniczek_ui_tab_v1", $ = id => document.getElementById(id);
   const read = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
   const write = v => { try { localStorage.setItem(KEY, v); } catch (e) { /* tryb prywatny */ } };
-  const TABS = ["dziennik", "kolo", "wstyd"];
-  const fromHash = () => (location.hash === "#kolo" ? "kolo" : location.hash === "#wstyd" ? "wstyd" : null);
+  const TABS = ["dziennik", "kolo", "wstyd", "pytania"];
+  const fromHash = () => { const h = location.hash.slice(1); return TABS.includes(h) && h !== "dziennik" ? h : null; };
   function go(tab, remember = true) {
     if (!TABS.includes(tab)) tab = "dziennik";
     TABS.forEach(t => { $(`view-${t}`).hidden = t !== tab; });
     document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
     if (tab === "kolo") Kolo.open();
     if (tab === "wstyd") Wstyd.open();
-    if (remember) write(tab);
+    if (tab === "pytania") Przemoc.open();
+    if (remember) write(tab === "pytania" ? "dziennik" : tab);   // Pytań nie przywracamy następnej osobie (klucz wspólny dla kont)
     const hash = tab === "dziennik" ? "" : `#${tab}`;
     if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
     window.scrollTo({ top: 0 });
   }
-  function onLogin() { $("bottom-nav").hidden = false; go(fromHash() || read() || "dziennik", false); }
-  function onLogout() { Kolo.reset(); Wstyd.reset(); $("bottom-nav").hidden = true; $("view-dziennik").hidden = false; $("view-kolo").hidden = true; $("view-wstyd").hidden = true; }
+  function onLogin() { $("bottom-nav").hidden = false; const r = read(); go(fromHash() || (r === "pytania" ? null : r) || "dziennik", false); }
+  function onLogout() { Kolo.reset(); Wstyd.reset(); Przemoc.reset(); $("bottom-nav").hidden = true; TABS.forEach(t => { $(`view-${t}`).hidden = t !== "dziennik"; }); }
   document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("#bottom-nav [data-tab]").forEach(b => b.addEventListener("click", () => go(b.dataset.tab))));
   window.addEventListener("hashchange", () => { if (!$("bottom-nav").hidden) go(fromHash() || "dziennik"); });
   return { go, onLogin, onLogout };

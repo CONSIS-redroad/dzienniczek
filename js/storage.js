@@ -9,7 +9,7 @@ const Storage = {
   saveWstyd(){ try { this.box().setItem(this.wstydKey(), JSON.stringify(AppState.wstyd)); return true; } catch { showToast("Nie udało się zapisać danych.","error"); return false; } },
   // 5.5.0 trzymał wpisy w rekordzie głównym — przenieś je pod osobny klucz od razu, zanim zapis reszty je pominie
   migrateWstyd(){ try { if(this.box().getItem(this.wstydKey())===null && AppState.wstyd.length) this.saveWstyd(); } catch {} },
-  clear(){ this.box().removeItem(this.key()); try { this.box().removeItem(this.wstydKey()); } catch {} },
+  clear(){ this.box().removeItem(this.key()); try { this.box().removeItem(this.wstydKey()); this.box().removeItem(this.key() + "_przemoc"); } catch {} },
   // Format v3 zapisywał klucz dnia jako toISOString() północy czasu lokalnego (w Polsce = dzień wcześniej).
   v3Key(d){ return d.toISOString().slice(0,10); },
   // Odtwarza lokalną datę, z której wyliczono klucz v3 w BIEŻĄCEJ strefie czasowej (nie przesuwa kluczy, które już są poprawne).

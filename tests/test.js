@@ -123,4 +123,22 @@ console.log('TZ =',process.env.TZ||'(domyślna)');
  ok(/\.btn-icon\{width:44px;height:44px\}/.test(css)&&/\.btn\{min-height:44px\}/.test(css),'cele dotykowe >= 44px na telefonie');
  ok(/viewport-fit=cover/.test(html)&&/safe-area-inset/.test(fs.readFileSync(path.join(root,'css','layout.css'),'utf8')),'safe-area uwzględnione');}
 
+// 10. Kwestionariusz (zakładka Pytania, js/przemoc.js): 65 pytań, punktacja 2/1/0, obce dane z pamięci odfiltrowane
+{const c=mk();c.window={addEventListener(){}};
+ vm.runInContext(fs.readFileSync(path.join(root,'js','przemoc.js'),'utf8').replace(/^const (\w+)\s*=/mg,'var $1 ='),c,{filename:'przemoc'});
+ const P=vm.runInContext('Przemoc',c),D=vm.runInContext('PRZEMOC',c);
+ ok(P.total===65&&P.max===130,'65 pytań, max 130 pkt');
+ ok(D.length===9&&new Set(D.map(s=>s.id)).size===9,'9 obszarów, unikalne id');
+ const nq=D.map(s=>s.parts.reduce((a,p)=>a+p.q.length,0));ok(JSON.stringify(nq)==='[8,5,4,6,4,9,9,5,15]','liczba pytań per obszar');
+ P.set({answers:{'izolacja.1':'c','izolacja.2':'r','izolacja.3':'n','grozby.9':'c'}});let sc=P.score();
+ ok(sc.total===5&&sc.answered===4,'punktacja często=2 rzadko=1 nigdy=0');
+ ok(sc.per.izolacja.pts===3&&sc.per.izolacja.c===1&&sc.per.izolacja.r===1&&sc.per.grozby.pts===2,'punkty per obszar');
+ P.set({answers:{'izolacja.1':'constructor','izolacja.2':'toString','uwaga.1':'__proto__','izolacja.99':'c','zle':'c','grozby.1':'C'}});sc=P.score();
+ ok(sc.total===0&&sc.answered===0,'klucze prototypu i obce odpowiedzi odrzucone');
+ const L=P.load({history:[{date:'2026-99-99',scores:{}},{date:'2026-11-07',total:'1e999',answered:-5,scores:{izolacja:999,grozby:-3}},{date:5,scores:{}},null]});
+ ok(L.history.length===1&&L.history[0].total===16&&L.history[0].answered===0,'historia: zła data odrzucona, liczby przycięte do zakresu');
+ ok(L.history[0].scores.izolacja===16&&L.history[0].scores.grozby===0,'historia: punkty obszaru w zakresie 0..max');
+ for(const bad of [null,[],5,'x',{answers:null,history:{}}])ok(P.load(bad).history.length===0&&Object.keys(P.load(bad).answers).length===0,'śmieci -> czysty stan');
+ const css=fs.readFileSync(path.join(root,'css','kolo.css'),'utf8');ok(/\.kolo-main\[hidden\][^{]*\{display:none!important\}/.test(css),'sekcja Pytania (kolo-main) chowa się atrybutem hidden');}
+
 console.log('OK, asercji:',n);

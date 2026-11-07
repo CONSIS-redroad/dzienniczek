@@ -1,0 +1,68 @@
+/* Kwestionariusz przemocy emocjonalnej (zakładka „Pytania”, 5.6.0) — te same karty, pigułki i zmienne --t-* co Koło i Wstyd.
+   Wykres = paski CSS (bez bibliotek; CSP i zasada „bez zależności”). */
+.prz-main{--k:#64748b;--k-txt:var(--t-fg2)}
+
+/* dolne menu: cztery zakładki — na wąskim ekranie ikona nad podpisem */
+.bottom-nav button{min-width:84px;padding:0 12px}
+@media(max-width:560px){
+  .bottom-nav{gap:2px;padding:4px;max-width:calc(100vw - 16px)}
+  .bottom-nav button{flex-direction:column;gap:2px;min-width:0;min-height:52px;padding:4px 10px;font-size:.72rem;line-height:1.1}
+  .bottom-nav button svg{width:20px;height:20px}
+  body:has(#bottom-nav:not([hidden])){padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+}
+@media(max-width:340px){.bottom-nav button{min-width:48px;padding:4px 6px;font-size:.68rem}}
+
+/* postęp i paski */
+.prz-progress-card{padding:14px 16px}
+.prz-bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:.95rem;color:var(--t-fg)}
+.prz-track{height:10px;margin-top:6px;border-radius:999px;background:var(--t-surf2);border:1px solid var(--t-line);overflow:hidden}
+.prz-fill{height:100%;width:0;border-radius:999px;background:var(--t-acc);transition:width .3s ease}
+@media(prefers-reduced-motion:reduce){.prz-fill{transition:none}}
+
+/* obszary (rozwijane) */
+.prz-sekcje{display:flex;flex-direction:column;gap:10px}
+.prz-sec{padding:0;overflow:hidden}
+.prz-sec summary{display:flex;align-items:center;gap:10px;min-height:52px;padding:12px 16px;cursor:pointer;list-style:none;font-weight:800;font-size:1.02rem;color:var(--t-fg)}
+.prz-sec summary::-webkit-details-marker{display:none}
+.prz-sec summary::after{content:"▾";margin-left:2px;color:var(--t-mut);transition:transform .2s}
+.prz-sec[open] summary::after{transform:rotate(180deg)}
+.prz-sec summary:focus-visible{outline:2px solid var(--t-acc);outline-offset:-2px}
+.prz-sec-title{flex:1 1 auto;min-width:0}
+.prz-sec-count.is-done{background:var(--t-acc-soft);color:var(--t-ok)}
+.prz-sec-desc{margin:0;padding:0 16px 8px;color:var(--t-fg2);font-size:.95rem;line-height:1.45}
+.prz-sub{margin:8px 16px 4px;font-size:.9rem;font-weight:800;color:var(--t-mut);text-transform:uppercase;letter-spacing:.04em}
+
+/* pytanie + trzy odpowiedzi */
+.prz-q{padding:12px 16px 14px;border-top:1px solid var(--t-line)}
+.prz-q-text{margin:0 0 10px;font-size:1rem;line-height:1.45;color:var(--t-fg)}
+.prz-q-nr{font-weight:800;color:var(--t-mut)}
+.prz-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prz-opt{position:relative;display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 8px;border-radius:12px;border:1px solid var(--t-line);background:var(--t-surf);color:var(--t-fg);font-weight:700;font-size:.92rem;cursor:pointer;transition:background .15s,border-color .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.prz-opt input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.prz-opt:hover{border-color:var(--t-acc-line)}
+.prz-opt:active{transform:scale(.97)}
+.prz-opt:has(input:focus-visible){outline:2px solid var(--t-acc);outline-offset:2px}
+.prz-opt:has(input:checked){background:var(--t-acc);border-color:var(--t-acc);color:var(--t-on-acc)}
+.prz-opt:has(input:checked)::after{content:"✓";margin-left:6px;font-weight:800}
+.prz-opt--n:has(input:checked){background:var(--t-surf2);border-color:var(--t-fg2);color:var(--t-fg)}
+
+/* podsumowanie */
+.prz-total{font-size:.95rem;color:var(--t-fg2)}
+.prz-total strong{font-size:1.5rem;color:var(--t-fg)}
+.prz-legend{margin:0 0 12px}
+.prz-bars{display:flex;flex-direction:column;gap:12px}
+.prz-bar-val{font-weight:700;color:var(--t-fg2);white-space:nowrap}
+.prz-bar-extra{margin:4px 0 0;font-size:.85rem;color:var(--t-mut)}
+.prz-hist{display:flex;flex-direction:column;gap:8px}
+.prz-hist-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 12px;border:1px solid var(--t-line);border-radius:12px;background:var(--t-surf);color:var(--t-fg2)}
+.prz-hist-row strong{color:var(--t-fg)}
+#przemoc-btn-clear.is-armed{color:var(--t-bad);border-color:var(--t-bad)}
+
+/* pomoc */
+.prz-help-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.prz-help-list li{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--t-surf2);color:var(--t-fg2);font-size:.95rem;line-height:1.4}
+.prz-help-list a,.prz-help-list strong{font-size:1.1rem;font-weight:800;color:var(--t-link,var(--t-acc));text-decoration:none}
+.prz-help-list strong{color:var(--t-fg);font-size:1rem}
+.prz-help-list a{min-height:32px;display:inline-flex;align-items:center}
+.prz-help-list a:hover{text-decoration:underline}
+@media(max-width:1023px){#view-pytania .kolo-note,#view-pytania .kolo-intro p{font-size:.95rem}}

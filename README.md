@@ -2,12 +2,15 @@
 
 Wersja przygotowana na bazie pełniejszego repo `CONSIS-redroad/dzienniczek`, z zachowaniem jego funkcji PWA, 25 cytatów, kalendarza, widoku miesięcznego 27 × dni i wydruku A4 poziomo. Z nowszej wersji modularnej przeniesiono podział kodu, tryb gościa i lokalne obliczanie dat.
 
-## Stan na 13.10.2026 — wersja 5.5.1 (na żywo)
+## Stan na 07.11.2026 — wersja 5.6.0
 
 - Adres: https://consis-redroad.github.io/dzienniczek/ (sprawdzenie wersji: `js/version.js`).
-- Dolne menu — trzy zakładki: **Dziennik** (27 objawów × dni, notatka, widok miesiąca, wydruk), **Koło** (koło uczuć, `js/kolo.js`),
+- Dolne menu — cztery zakładki: **Dziennik** (27 objawów × dni, notatka, widok miesiąca, wydruk), **Koło** (koło uczuć, `js/kolo.js`),
   **Wstyd** („Dzienniczek wstydu”, `js/wstyd.js`: data, sytuacja, 9 odmian wstydu, 13 objawów w ciele + własny dopisek,
-  jak się wyraził; podsumowanie „Najczęściej w ciele”, „Kopiuj wszystko”). Adres `#kolo` / `#wstyd` otwiera zakładkę.
+  jak się wyraził; podsumowanie „Najczęściej w ciele”, „Kopiuj wszystko”),
+  **Pytania** (kwestionariusz przemocy emocjonalnej, `js/przemoc.js` + `css/przemoc.css`: 9 obszarów, 65 pytań, często/rzadko/nigdy = 2/1/0 pkt,
+  paski wyniku per obszar, „Zapisz wynik z dziś” — historia 1 wynik/dzień, „Kopiuj wynik”, numery pomocy; bez progów „niski/wysoki” — to nie diagnoza;
+  w menu neutralny podpis „Pytania”, żeby ekran nie zdradzał treści). Adres `#kolo` / `#wstyd` / `#pytania` otwiera zakładkę.
 - Wpisy wstydu leżą pod OSOBNYM kluczem `<klucz użytkownika>_wstyd` (od 5.5.1) — zapis dnia/koła, także ze starej
   karty, ich nie nadpisuje; wpisy z 5.5.0 (w rekordzie głównym) przenoszą się same; druga karta odświeża listę (zdarzenie `storage`).
 - Testy telefonu (Playwright, 320/390 px, jasny/ciemny, `service_workers='block'`, `has_touch=True`): skrypty w oknie AI
@@ -85,7 +88,7 @@ js/
 
 ## Dane i logowanie
 
-Dane zalogowanego użytkownika pozostają w `localStorage` **tego urządzenia** pod kluczem `dzienniczek_user_<sub>` (dni, cytaty, koło) i `dzienniczek_user_<sub>_wstyd` (dzienniczek wstydu). Konto Google służy tylko do rozpoznania osoby — danych na koncie ani na żadnym serwerze nie ma (zmiana w „Plan poprawek”). Gość używa `sessionStorage`.
+Dane zalogowanego użytkownika pozostają w `localStorage` **tego urządzenia** pod kluczem `dzienniczek_user_<sub>` (dni, cytaty, koło), `dzienniczek_user_<sub>_wstyd` (dzienniczek wstydu) i `dzienniczek_user_<sub>_przemoc` (kwestionariusz: odpowiedzi + historia wyników). Konto Google służy tylko do rozpoznania osoby — danych na koncie ani na żadnym serwerze nie ma (zmiana w „Plan poprawek”). Gość używa `sessionStorage`.
 
 Google Identity Services dostarcza poświadczenie, którego payload jest odczytywany w przeglądarce w celu identyfikacji profilu. **Ta aplikacja nie posiada backendu i nie wykonuje serwerowej weryfikacji podpisu tokenu.** Nie należy traktować jej jako pełnego systemu bezpiecznego uwierzytelniania danych medycznych/terapeutycznych.
 
