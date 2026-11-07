@@ -31,6 +31,7 @@ button{cursor:pointer}textarea{box-sizing:border-box;background:var(--t-surf);co
 img,svg,canvas{max-width:100%}
 .hidden{display:none!important}
 :focus-visible{outline:2px solid var(--t-acc);outline-offset:2px}
-/* TELEFON / TABLET: cała skala +12,5 % (jak w TERAPII) */
-@media(max-width:1023px){html{font-size:112.5%}}
+/* WIELKOŚĆ TEKSTU (5.6.1): wybór w „Wygląd” — mały / średni / duży, mnoży się z ustawieniem czcionki telefonu.
+   Dawne +12,5 % na telefonie zdjęte (Bartek 07.11: na S25 Ultra z systemowym powiększeniem było za duże). */
+html[data-text="s"]{font-size:87.5%}html[data-text="l"]{font-size:115%}
 @media(max-width:640px){input,select,textarea{font-size:16px!important}}

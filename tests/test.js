@@ -141,4 +141,12 @@ console.log('TZ =',process.env.TZ||'(domyślna)');
  for(const bad of [null,[],5,'x',{answers:null,history:{}}])ok(P.load(bad).history.length===0&&Object.keys(P.load(bad).answers).length===0,'śmieci -> czysty stan');
  const css=fs.readFileSync(path.join(root,'css','kolo.css'),'utf8');ok(/\.kolo-main\[hidden\][^{]*\{display:none!important\}/.test(css),'sekcja Pytania (kolo-main) chowa się atrybutem hidden');}
 
+// 11. Wielkość tekstu (5.6.1): skala tylko z wyboru użytkownika, bez dawnego +12,5 % na telefonie; śmieci w kluczu ignorowane
+{const base=fs.readFileSync(path.join(root,'css','base.css'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8'),th=fs.readFileSync(path.join(root,'js','theme.js'),'utf8');
+ ok(!/font-size:112\.5%/.test(base),'brak dawnego html{font-size:112.5%}');
+ ok(/html\[data-text="s"\]\{font-size:87\.5%\}/.test(base)&&/html\[data-text="l"\]\{font-size:115%\}/.test(base),'reguły Mały/Duży');
+ ok(/localStorage\.getItem\("rr_ui_text_v1"\);if\(t==="s"\|\|t==="l"\)/.test(html),'atrybut ustawiany w <head> tylko dla s/l');
+ for(const v of ['s','m','l'])ok(html.includes(`<button type="button" data-text="${v}"`),'przycisk wielkości '+v);
+ ok(/const readText = \(\) => \(t => \(t === "s" \|\| t === "l"\) \? t : "m"\)/.test(th),'theme.js: nieznana wartość = średni');}
+
 console.log('OK, asercji:',n);
