@@ -7,6 +7,7 @@ const Theme = (() => {
   // v2 = RZADKI wybór tapety (tylko pola zmienione przez użytkownika); v1 / stary klucz czytane raz, do migracji.
   // Osobny klucz: stare wersje (TERAPIA/Dzienniczek sprzed 11.10) piszą do v1 pełny zestaw i nie psują v2.
   const WALL_KEY = "rr_ui_wallpaper_v2", V1_WALL_KEY = "rr_ui_wallpaper_v1", OLD_WALL_KEY = "dzienniczek_ui_wallpaper_v1";
+  const TEXT_KEY = "rr_ui_text_v1";   // wielkość tekstu: "s" | "l" (brak = średni); docelowo wspólny z TERAPIĄ (07.11: TERAPIA go jeszcze nie czyta)
   const NS = "http://www.w3.org/2000/svg";
   const media = q => { try { return window.matchMedia(q); } catch (e) { return null; } };
   const reduced = () => !!(media("(prefers-reduced-motion: reduce)") || {}).matches;
@@ -191,6 +192,9 @@ const Theme = (() => {
     if (before !== document.documentElement.dataset.theme) renderWallpaper();
   }
   function setMode(m) { mode = m; write(MODE_KEY, m === "system" ? null : m); applyMode(); syncDialog(); }
+  const readText = () => (t => (t === "s" || t === "l") ? t : "m")(read(TEXT_KEY));
+  function applyText(t) { if (t === "m") delete document.documentElement.dataset.text; else document.documentElement.dataset.text = t; }
+  function setText(t) { t = (t === "s" || t === "l") ? t : "m"; write(TEXT_KEY, t === "m" ? null : t); applyText(t); syncDialog(); }
   function setWall(patch) {
     FIELDS.forEach(k => { if (k in patch && patch[k] !== wall[k]) choice[k] = patch[k]; });
     saveChoice();
@@ -361,6 +365,7 @@ const Theme = (() => {
     if (!dlg) return;
     const press = (sel, on) => dlg.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", String(on(b))));
     press("[data-mode]", b => b.dataset.mode === mode);
+    press("[data-text]", b => b.dataset.text === readText());
     press("[data-theme]", b => b.dataset.theme === themeById(wall.themeId).id);
     press("[data-density]", b => b.dataset.density === "off" ? !wall.particles : (wall.particles && Number(b.dataset.density) === wall.density));
     press("[data-motion]", b => (b.dataset.motion === "on") === !!wall.motion);
@@ -384,9 +389,11 @@ const Theme = (() => {
 
   function init() {
     applyMode();
+    applyText(readText());
     renderWallpaper();
     // zmiana wyglądu w TERAPII (inna karta, ten sam adres) → od razu tutaj
     window.addEventListener("storage", e => {
+      if (e.key === TEXT_KEY) { applyText(readText()); syncDialog(); }
       if (e.key === MODE_KEY) { mode = (m => (m === "light" || m === "dark") ? m : "system")(read(MODE_KEY)); applyMode(); syncDialog(); }
       if (e.key === WALL_KEY) { choice = loadChoice(); wall = loadWall(); renderWallpaper(); syncDialog(); }
     });
@@ -397,12 +404,13 @@ const Theme = (() => {
     document.getElementById("btn-look")?.addEventListener("click", openDialog);
     document.getElementById("btn-close-look")?.addEventListener("click", closeDialog);
     document.getElementById("btn-close-look-2")?.addEventListener("click", closeDialog);
-    document.getElementById("btn-look-reset")?.addEventListener("click", () => { choice = {}; saveChoice(); wall = loadWall(); setMode("system"); renderWallpaper(); syncDialog(); });
+    document.getElementById("btn-look-reset")?.addEventListener("click", () => { choice = {}; saveChoice(); wall = loadWall(); setText("m"); setMode("system"); renderWallpaper(); syncDialog(); });
     const o = document.getElementById("look-overlay");
     o?.addEventListener("click", e => {
       if (e.target === e.currentTarget) { closeDialog(); return; }
       const b = e.target.closest("button"); if (!b) return;
-      if (b.dataset.mode) setMode(b.dataset.mode);
+      if (b.dataset.text) setText(b.dataset.text);
+      else if (b.dataset.mode) setMode(b.dataset.mode);
       else if (b.dataset.density) setWall(b.dataset.density === "off" ? { particles: false } : { particles: true, density: Number(b.dataset.density) });
       else if (b.dataset.motion) setWall({ motion: b.dataset.motion === "on" });
     });
@@ -411,6 +419,6 @@ const Theme = (() => {
   }
 
   const komety = () => window.dispatchEvent(new Event("rr:komety")); // pokaz / test deszczu komet
-  return { init, setMode, komety, themes: THEMES, get mode() { return mode; }, get wallpaper() { return Object.assign({}, wall); } };
+  return { init, setMode, setText, komety, get text() { return readText(); }, themes: THEMES, get mode() { return mode; }, get wallpaper() { return Object.assign({}, wall); } };
 })();
 document.addEventListener("DOMContentLoaded", () => Theme.init());
