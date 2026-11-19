@@ -2,6 +2,8 @@
 
 Wersja przygotowana na bazie pełniejszego repo `CONSIS-redroad/dzienniczek`, z zachowaniem jego funkcji PWA, 25 cytatów, kalendarza, widoku miesięcznego 27 × dni i wydruku A4 poziomo. Z nowszej wersji modularnej przeniesiono podział kodu, tryb gościa i lokalne obliczanie dat.
 
+> **Dla AI:** zacznij od [`.ai/RULES.md`](.ai/RULES.md) (twarde zasady prywatności, danych i wydania) i [`docs/DANE.md`](docs/DANE.md).
+
 ## Stan na 07.11.2026 — wersja 5.6.1 (wielkość tekstu Mały/Średni/Duży w „Wygląd”, klucz `rr_ui_text_v1`)
 
 - Adres: https://consis-redroad.github.io/dzienniczek/ (sprawdzenie wersji: `js/version.js`).
